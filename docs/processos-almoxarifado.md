@@ -52,7 +52,7 @@ A requisição deve possuir um ciclo de vida claro, com estados explícitos. A v
    - As quantidades autorizadas foram separadas e estão aguardando coleta.
 
 6. **Atendida**
-   - Todas as quantidades autorizadas foram entregues e a retirada foi registrada pelo Almoxarifado.
+   - A retirada foi registrada pelo Almoxarifado, com entrega total ou parcial das quantidades autorizadas.
    - Nesse momento ocorre a baixa definitiva do estoque.
    - O estoque deve ser baixado apenas na quantidade efetivamente retirada.
    - A parte autorizada e não entregue deve ter sua reserva liberada.

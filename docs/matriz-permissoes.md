@@ -60,7 +60,7 @@ Valores: **Sim**, **Não**, **Apenas próprio setor**, **Qualquer setor**, **Ape
 | Autorizar | Não | Não | Apenas próprio setor | Não | Apenas setor Almoxarifado | Sim | Setor do beneficiário define autorizador. |
 | Autorizar parcialmente | Não | Não | Não | Não | Não | Não | Não permitido; chefe autoriza integralmente ou recusa a requisição inteira. |
 | Recusar | Não | Não | Apenas próprio setor | Não | Apenas setor Almoxarifado | Sim | Recusa inteira; motivo obrigatório. |
-| Autorizar outro setor | Não | Não | Não | Não | Não | Não | Almoxarifado não autoriza outros setores. |
+| Autorizar outro setor | Não | Não | Não | Não | Não | Sim | Superusuário tem permissão total; Almoxarifado não autoriza outros setores. |
 | Ver fila de atendimento | Não | Não | Não | Sim | Sim | Sim | Requisições nos estados `autorizada` e `pronta_para_retirada`. |
 | Separar para retirada | Não | Não | Não | Sim | Sim | Sim | Transiciona de `autorizada` para `pronta_para_retirada`; mantém reserva e não baixa físico. |
 | Registrar atendimento parcial | Não | Não | Não | Sim | Sim | Sim | Só a partir de `pronta_para_retirada`; exige justificativa por item menor/zero; finaliza como `atendida`. |
@@ -91,7 +91,7 @@ Valores: **Sim**, **Não**, **Apenas próprio setor**, **Qualquer setor**, **Ape
 | Acessar relatórios gerais | Não | Não | Não | Sim | Sim | Sim | Solicitante não acessa. |
 | Acessar relatórios do próprio setor | Não | Não | Apenas próprio setor | Sim | Sim | Sim | Chefe de setor: consumo/requisições do setor. |
 | Exportar CSV de relatórios | Não | Não | Apenas próprio setor | Sim | Sim | Sim | Respeita filtros e escopo. |
-| Painel Gestão do Almoxarifado | Não | Não | Não | Não | Sim | Sim | Superusuário consulta/importa, sem operar estoque. |
+| Painel Gestão do Almoxarifado | Não | Não | Não | Não | Sim | Sim | Superusuário tem acesso completo; chefe de Almoxarifado acessa gestão operacional. |
 
 ## 5. Visibilidade
 
