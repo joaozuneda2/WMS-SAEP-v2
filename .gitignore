@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+*.egg-info/
+/dist/
+/build/
+apps/web/static/web/dist/
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+apps/**/migrations/*.py
+!apps/**/migrations/__init__.py
+
+# Ambiente
+.env
+.env.local
+
+# Testes e cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ruff
+.ruff_cache/
+
+# Frontend / Node
+node_modules/
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+frontend/.pnpm-store/
+frontend/*.tsbuildinfo
+frontend/src/routeTree.gen.ts.map
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git worktrees
+.worktrees/
+
+# Local Claude worktree artifacts
+.claude/worktrees/
+
+# Code review artefacts
+docs/code-reviews/
+
+# Superpowers
+.superpowers/
