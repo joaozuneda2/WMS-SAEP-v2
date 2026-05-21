@@ -166,15 +166,20 @@ def _seed_usuarios(setores):
     usuarios = {}
     for matricula, dados in USUARIOS.items():
         setor_codigo = dados['setor']
-        usuario, _created = User.objects.get_or_create(matricula=matricula)
-        usuario.nome = dados['nome']
-        usuario.email = dados['email']
-        usuario.setor = setores[setor_codigo] if setor_codigo else None
-        usuario.is_staff = dados['is_staff']
-        usuario.is_superuser = dados['is_superuser']
-        usuario.is_active = True
-        usuario.set_password(senha)
-        usuario.save()
+        usuario, _created = User.objects.update_or_create(
+            matricula=matricula,
+            defaults={
+                'nome': dados['nome'],
+                'email': dados['email'],
+                'setor': setores[setor_codigo] if setor_codigo else None,
+                'is_staff': dados['is_staff'],
+                'is_superuser': dados['is_superuser'],
+                'is_active': True,
+            },
+        )
+        if not usuario.check_password(senha):
+            usuario.set_password(senha)
+            usuario.save(update_fields=['password'])
         usuarios[matricula] = usuario
     return usuarios
 
