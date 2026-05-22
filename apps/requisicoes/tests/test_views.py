@@ -283,6 +283,7 @@ def test_buscar_materiais_shape(client, solicitante, material_disponivel):
     assert resp.status_code == 200
     data = resp.json()
     assert 'resultados' in data
+    assert len(data['resultados']) > 0
     for r in data['resultados']:
         assert 'id' in r
         assert 'nome' in r
