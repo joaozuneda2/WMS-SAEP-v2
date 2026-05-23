@@ -63,8 +63,14 @@ def criar_requisicao(
     TR-001: N/A → RASCUNHO.
     Não chama verificar_transicao_valida — não há estado de origem.
     """
-    ator = User.objects.get(pk=ator_id)
-    beneficiario = User.objects.select_related('setor').get(pk=beneficiario_id)
+    try:
+        ator = User.objects.get(pk=ator_id)
+    except User.DoesNotExist:
+        raise DadosInvalidos('Ator não encontrado.', code='ator_nao_encontrado') from None
+    try:
+        beneficiario = User.objects.select_related('setor').get(pk=beneficiario_id)
+    except User.DoesNotExist:
+        raise DadosInvalidos('Beneficiário não encontrado.', code='beneficiario_nao_encontrado') from None
 
     # Autorização
     exigir_pode_criar_para_beneficiario(ator, beneficiario)
@@ -139,8 +145,14 @@ def editar_rascunho(
     TR-002: RASCUNHO → RASCUNHO.
     Beneficiário, setor e criador são imutáveis nesta operação.
     """
-    ator = User.objects.get(pk=ator_id)
-    requisicao = Requisicao.objects.select_for_update().get(pk=requisicao_id)
+    try:
+        ator = User.objects.get(pk=ator_id)
+    except User.DoesNotExist:
+        raise DadosInvalidos('Ator não encontrado.', code='ator_nao_encontrado') from None
+    try:
+        requisicao = Requisicao.objects.select_for_update().get(pk=requisicao_id)
+    except Requisicao.DoesNotExist:
+        raise DadosInvalidos('Requisição não encontrada.', code='requisicao_nao_encontrada') from None
 
     # Autorização
     exigir_pode_editar_rascunho(ator, requisicao)
@@ -187,7 +199,14 @@ def _validar_itens(itens: list[ItemInput]) -> None:
 
     Lança DadosInvalidos para qualquer item inválido.
     """
-    material_ids = [item['material_id'] for item in itens]
+    material_ids: list[int] = []
+    for item in itens:
+        if 'material_id' not in item or 'quantidade_solicitada' not in item:
+            raise DadosInvalidos(
+                'Item inválido: material e quantidade são obrigatórios.',
+                code='item_invalido',
+            )
+        material_ids.append(item['material_id'])
 
     # Detectar duplicidade
     if len(material_ids) != len(set(material_ids)):
