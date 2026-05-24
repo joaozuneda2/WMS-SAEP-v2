@@ -351,7 +351,6 @@ def detalhe_requisicao_view(request, pk: int):
     )
 
 
-
 # ---------------------------------------------------------------------------
 # Enviar rascunho para autorização — TR-005
 # ---------------------------------------------------------------------------
@@ -380,6 +379,4 @@ def enviar_rascunho_view(request, pk: int):
         request,
         f'Requisição enviada para autorização. Número {requisicao.numero_publico}.',
     )
-    return _htmx_redirect(
-        request, reverse('requisicoes:detalhe', args=[requisicao.pk])
-    )
+    return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[requisicao.pk]))

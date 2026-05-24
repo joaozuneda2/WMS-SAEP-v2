@@ -259,9 +259,7 @@ def enviar_para_autorizacao(
         requisicao.numero_publico = f'REQ-{ano}-{sequencia.ultimo_numero:06d}'
 
     requisicao.estado = EstadoRequisicao.AGUARDANDO_AUTORIZACAO
-    requisicao.save(
-        update_fields=['estado', 'numero_publico', 'atualizado_em']
-    )
+    requisicao.save(update_fields=['estado', 'numero_publico', 'atualizado_em'])
 
     TimelineRequisicao.objects.create(
         requisicao=requisicao,

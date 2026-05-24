@@ -475,7 +475,6 @@ def test_detalhe_renderiza_timeline_e_itens(
     assert list(response.context['eventos'])
 
 
-
 # ---------------------------------------------------------------------------
 # Enviar rascunho — TR-005
 # ---------------------------------------------------------------------------
@@ -502,7 +501,9 @@ def test_enviar_rascunho_post_sem_login_redireciona(client, solicitante, setor_o
         beneficiario=solicitante,
         setor_beneficiario=setor_obras,
     )
-    response = client.post(reverse('requisicoes:enviar_rascunho', kwargs={'pk': req.pk}))
+    response = client.post(
+        reverse('requisicoes:enviar_rascunho', kwargs={'pk': req.pk})
+    )
     assert response.status_code == 302
     assert '/login' in response.url or '/accounts/login' in response.url
 
@@ -518,7 +519,9 @@ def test_enviar_rascunho_post_nao_criador_retorna_403(
         beneficiario=solicitante,
         setor_beneficiario=setor_obras,
     )
-    response = client.post(reverse('requisicoes:enviar_rascunho', kwargs={'pk': req.pk}))
+    response = client.post(
+        reverse('requisicoes:enviar_rascunho', kwargs={'pk': req.pk})
+    )
     assert response.status_code == 403
 
 
@@ -530,7 +533,12 @@ def test_enviar_rascunho_post_criador_redireciona_detalhe(
     req = criar_requisicao(
         ator_id=solicitante.pk,
         beneficiario_id=solicitante.pk,
-        itens=[{'material_id': material_disponivel.pk, 'quantidade_solicitada': Decimal('1')}],
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('1'),
+            }
+        ],
     )
     response = client.post(
         reverse('requisicoes:enviar_rascunho', kwargs={'pk': req.pk})
@@ -550,7 +558,12 @@ def test_enviar_rascunho_post_estado_invalido_mostra_erro(
     req = criar_requisicao(
         ator_id=solicitante.pk,
         beneficiario_id=solicitante.pk,
-        itens=[{'material_id': material_disponivel.pk, 'quantidade_solicitada': Decimal('1')}],
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('1'),
+            }
+        ],
     )
     req.estado = EstadoRequisicao.AGUARDANDO_AUTORIZACAO
     req.numero_publico = 'REQ-2026-000777'
@@ -573,7 +586,12 @@ def test_enviar_rascunho_htmx_retorna_hx_redirect(
     req = criar_requisicao(
         ator_id=solicitante.pk,
         beneficiario_id=solicitante.pk,
-        itens=[{'material_id': material_disponivel.pk, 'quantidade_solicitada': Decimal('1')}],
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('1'),
+            }
+        ],
     )
     response = client.post(
         reverse('requisicoes:enviar_rascunho', kwargs={'pk': req.pk}),
@@ -593,7 +611,12 @@ def test_detalhe_exibe_botao_enviar_para_criador_em_rascunho(
     req = criar_requisicao(
         ator_id=solicitante.pk,
         beneficiario_id=solicitante.pk,
-        itens=[{'material_id': material_disponivel.pk, 'quantidade_solicitada': Decimal('1')}],
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('1'),
+            }
+        ],
     )
     response = client.get(reverse('requisicoes:detalhe', kwargs={'pk': req.pk}))
     assert response.status_code == 200
@@ -609,7 +632,12 @@ def test_detalhe_nao_exibe_botao_enviar_em_estado_nao_rascunho(
     req = criar_requisicao(
         ator_id=solicitante.pk,
         beneficiario_id=solicitante.pk,
-        itens=[{'material_id': material_disponivel.pk, 'quantidade_solicitada': Decimal('1')}],
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('1'),
+            }
+        ],
     )
     req.estado = EstadoRequisicao.AGUARDANDO_AUTORIZACAO
     req.numero_publico = 'REQ-2026-000888'

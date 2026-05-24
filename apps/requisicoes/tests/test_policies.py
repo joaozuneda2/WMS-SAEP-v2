@@ -225,7 +225,6 @@ def test_criador_retorna_true_independente_do_estado(solicitante, setor_obras):
     assert pode_editar_rascunho(solicitante, req) is True
 
 
-
 # ---------------------------------------------------------------------------
 # pode_enviar_rascunho
 # ---------------------------------------------------------------------------
