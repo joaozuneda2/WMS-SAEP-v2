@@ -116,6 +116,27 @@ def test_nova_requisicao_post_acao_rascunho_explicito(
 
 
 @pytest.mark.django_db
+def test_nova_requisicao_post_sem_acao_default_eh_rascunho(
+    client, solicitante, material_disponivel
+):
+    """Enter em campo → POST sem 'acao' → default seguro = rascunho.
+
+    Guarda contra regressão: 'Criar e enviar' NÃO pode ser o default ao
+    pressionar Enter em um input. View deve cair no ramo rascunho.
+    """
+    _login(client, solicitante)
+    data = _formset_post(material_disponivel.pk)
+    assert 'acao' not in data
+    resp = client.post(reverse('requisicoes:nova_requisicao'), data)
+
+    req = Requisicao.objects.filter(criador=solicitante).first()
+    assert req.estado == EstadoRequisicao.RASCUNHO
+    assert req.numero_publico is None
+    assert resp.status_code == 302
+    assert reverse('requisicoes:detalhe', kwargs={'pk': req.pk}) in resp['Location']
+
+
+@pytest.mark.django_db
 def test_nova_requisicao_post_sem_itens_retorna_form(client, solicitante):
     _login(client, solicitante)
     data = {
