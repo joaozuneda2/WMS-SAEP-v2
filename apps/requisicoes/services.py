@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 from django.db import transaction
 from django.utils import timezone
@@ -20,6 +20,7 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.core.exceptions import DadosInvalidos, EstadoInvalido
 from apps.estoque.models import Material
+from apps.estoque.services import reservar_saldos_para_autorizacao
 from apps.requisicoes.models import (
     EstadoRequisicao,
     EventoTimeline,
@@ -29,6 +30,7 @@ from apps.requisicoes.models import (
     TimelineRequisicao,
 )
 from apps.requisicoes.policies import (
+    exigir_pode_autorizar_requisicao,
     exigir_pode_criar_para_beneficiario,
     exigir_pode_editar_rascunho,
     exigir_pode_enviar_rascunho,
@@ -47,7 +49,10 @@ if TYPE_CHECKING:
 # Tipos auxiliares
 # ---------------------------------------------------------------------------
 
-ItemInput = dict  # {'material_id': int, 'quantidade_solicitada': Decimal}
+
+class ItemInput(TypedDict):
+    material_id: int
+    quantidade_solicitada: Decimal
 
 
 # ---------------------------------------------------------------------------
@@ -366,6 +371,79 @@ def recusar_requisicao(
         ator=ator,
         estado_resultante=EstadoRequisicao.RECUSADA,
         justificativa=motivo_limpo,
+    )
+
+    return requisicao
+
+
+@transaction.atomic
+def autorizar_requisicao(
+    *,
+    ator_id: int,
+    requisicao_id: int,
+) -> Requisicao:
+    """Autoriza integralmente uma requisição aguardando autorização.
+
+    TR-008: AGUARDANDO_AUTORIZACAO -> AUTORIZADA.
+    Reserva saldo integral sem baixa física. Quando o ator é o beneficiário,
+    o evento de timeline recebe ``metadata["auto_autorizacao"] = true``.
+    """
+    try:
+        ator = User.objects.get(pk=ator_id)
+    except User.DoesNotExist:
+        raise DadosInvalidos(
+            'Ator não encontrado.', code='ator_nao_encontrado'
+        ) from None
+    try:
+        requisicao = Requisicao.objects.select_for_update().get(pk=requisicao_id)
+    except Requisicao.DoesNotExist:
+        raise DadosInvalidos(
+            'Requisição não encontrada.', code='requisicao_nao_encontrada'
+        ) from None
+
+    exigir_pode_autorizar_requisicao(ator, requisicao)
+
+    if requisicao.estado != EstadoRequisicao.AGUARDANDO_AUTORIZACAO:
+        raise EstadoInvalido(
+            'Esta requisição não está aguardando autorização.',
+            code='estado_origem_invalido',
+        )
+    verificar_transicao_valida(requisicao.estado, EstadoRequisicao.AUTORIZADA)
+
+    itens = list(requisicao.itens.select_related('material').order_by('id'))
+    if not itens:
+        raise DadosInvalidos(
+            'A requisição precisa ter ao menos um item para ser autorizada.',
+            code='sem_itens',
+        )
+
+    reservar_saldos_para_autorizacao(
+        itens=[
+            {
+                'material_id': item.material_id,
+                'quantidade_solicitada': item.quantidade_solicitada,
+            }
+            for item in itens
+        ]
+    )
+
+    for item in itens:
+        item.quantidade_autorizada = item.quantidade_solicitada
+        item.save(update_fields=['quantidade_autorizada'])
+
+    requisicao.estado = EstadoRequisicao.AUTORIZADA
+    requisicao.save(update_fields=['estado', 'atualizado_em'])
+
+    metadata: dict[str, object] = {}
+    if ator.pk == requisicao.beneficiario_id:
+        metadata['auto_autorizacao'] = True
+
+    TimelineRequisicao.objects.create(
+        requisicao=requisicao,
+        evento=EventoTimeline.AUTORIZACAO_TOTAL,
+        ator=ator,
+        estado_resultante=EstadoRequisicao.AUTORIZADA,
+        metadata=metadata,
     )
 
     return requisicao

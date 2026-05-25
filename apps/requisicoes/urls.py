@@ -10,6 +10,7 @@ urlpatterns = [
     path('autorizacoes/', views.fila_autorizacao_view, name='autorizacoes'),
     path('nova/', views.nova_requisicao, name='nova_requisicao'),
     path('<int:pk>/', views.detalhe_requisicao_view, name='detalhe'),
+    path('<int:pk>/autorizar/', views.autorizar_requisicao_view, name='autorizar'),
     path('<int:pk>/editar/', views.editar_rascunho_view, name='editar_rascunho'),
     path('<int:pk>/enviar/', views.enviar_rascunho_view, name='enviar_rascunho'),
     path(

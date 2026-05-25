@@ -317,3 +317,16 @@ def exigir_pode_recusar_requisicao(ator: User, requisicao: Requisicao) -> None:
             'Você não tem permissão para recusar esta requisição.',
             code='recusar_requisicao_negada',
         )
+
+
+def pode_autorizar_requisicao(ator: User, requisicao: Requisicao) -> bool:
+    """True se o ator chefia o setor do beneficiário ou é superuser."""
+    return pode_recusar_requisicao(ator, requisicao)
+
+
+def exigir_pode_autorizar_requisicao(ator: User, requisicao: Requisicao) -> None:
+    if not pode_autorizar_requisicao(ator, requisicao):
+        raise PermissaoNegada(
+            'Você não tem permissão para autorizar esta requisição.',
+            code='autorizar_requisicao_negada',
+        )

@@ -874,7 +874,7 @@ def test_fila_autorizacao_chefe_renderiza_apenas_setor(
     assert req_outro_setor_view not in requisicoes
     html = response.content.decode('utf-8')
     assert 'Fila de autorização' in html
-    assert 'Ver detalhe' in html
+    assert 'Analisar' in html
     assert 'Atualizada em' in html
     assert 'Enviada em' not in html
 
@@ -892,7 +892,7 @@ def test_fila_autorizacao_superuser_ve_todos_setores(
     assert req_outro_setor_view in requisicoes
     html = response.content.decode('utf-8')
     assert 'Fila de autorização' in html
-    assert 'Ver detalhe' in html
+    assert 'Analisar' in html
     assert 'Atualizada em' in html
     assert 'Enviada em' not in html
 
@@ -1102,6 +1102,138 @@ def test_detalhe_exibe_recusa_para_chefe_e_nao_exibe_retorno(
     assert 'Confirmar retorno' not in html
     assert 'data-confirm-message' in html
     assert html.count('id="decisao-autorizacao-titulo"') == 1
+
+
+@pytest.mark.django_db
+def test_detalhe_exibe_autorizar_para_chefe_e_nao_exibe_para_outro_papel(
+    client, chefe_obras, aux_almoxarifado, material_disponivel
+):
+    from apps.requisicoes.services import enviar_para_autorizacao
+
+    _login(client, chefe_obras)
+    req = criar_requisicao(
+        ator_id=chefe_obras.pk,
+        beneficiario_id=chefe_obras.pk,
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('2'),
+            }
+        ],
+    )
+    req = enviar_para_autorizacao(ator_id=chefe_obras.pk, requisicao_id=req.pk)
+
+    response = client.get(reverse('requisicoes:detalhe', kwargs={'pk': req.pk}))
+    html = response.content.decode('utf-8')
+
+    assert response.status_code == 200
+    assert response.context['pode_autorizar'] is True
+    assert 'Autorizar' in html
+    assert 'Analisar' not in html
+
+    _login(client, aux_almoxarifado)
+    response = client.get(reverse('requisicoes:detalhe', kwargs={'pk': req.pk}))
+    html = response.content.decode('utf-8')
+
+    assert response.status_code == 200
+    assert response.context['pode_autorizar'] is False
+    assert 'Autorizar' not in html
+    assert 'Analisar' not in html
+
+
+@pytest.mark.django_db
+def test_autorizar_requisicao_post_chefe_redireciona_e_muda_estado(
+    client, chefe_obras, material_disponivel
+):
+    from apps.requisicoes.services import enviar_para_autorizacao
+
+    _login(client, chefe_obras)
+    req = criar_requisicao(
+        ator_id=chefe_obras.pk,
+        beneficiario_id=chefe_obras.pk,
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('2'),
+            }
+        ],
+    )
+    req = enviar_para_autorizacao(ator_id=chefe_obras.pk, requisicao_id=req.pk)
+
+    response = client.post(reverse('requisicoes:autorizar', kwargs={'pk': req.pk}))
+
+    assert response.status_code == 302
+    assert response.url == reverse('requisicoes:detalhe', kwargs={'pk': req.pk})
+    req.refresh_from_db()
+    item = req.itens.get()
+    assert req.estado == EstadoRequisicao.AUTORIZADA
+    assert item.quantidade_autorizada == item.quantidade_solicitada
+
+
+@pytest.mark.django_db
+def test_autorizar_requisicao_htmx_retorna_hx_redirect(
+    client, chefe_obras, material_disponivel
+):
+    from apps.requisicoes.services import enviar_para_autorizacao
+
+    _login(client, chefe_obras)
+    req = criar_requisicao(
+        ator_id=chefe_obras.pk,
+        beneficiario_id=chefe_obras.pk,
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('2'),
+            }
+        ],
+    )
+    req = enviar_para_autorizacao(ator_id=chefe_obras.pk, requisicao_id=req.pk)
+
+    response = client.post(
+        reverse('requisicoes:autorizar', kwargs={'pk': req.pk}),
+        HTTP_HX_REQUEST='true',
+    )
+
+    assert response.status_code == 204
+    assert response['HX-Redirect'] == reverse(
+        'requisicoes:detalhe', kwargs={'pk': req.pk}
+    )
+
+
+@pytest.mark.django_db
+def test_autorizar_requisicao_post_estado_invalido_redireciona(
+    client, chefe_obras, material_disponivel
+):
+    _login(client, chefe_obras)
+    req = criar_requisicao(
+        ator_id=chefe_obras.pk,
+        beneficiario_id=chefe_obras.pk,
+        itens=[
+            {
+                'material_id': material_disponivel.pk,
+                'quantidade_solicitada': Decimal('2'),
+            }
+        ],
+    )
+
+    response = client.post(reverse('requisicoes:autorizar', kwargs={'pk': req.pk}))
+
+    assert response.status_code == 302
+    assert response.url == reverse('requisicoes:detalhe', kwargs={'pk': req.pk})
+    req.refresh_from_db()
+    assert req.estado == EstadoRequisicao.RASCUNHO
+
+
+@pytest.mark.django_db
+def test_autorizar_requisicao_post_sem_permissao_retorna_403(
+    client, chefe_almoxarifado, req_enviada_solicitante
+):
+    _login(client, chefe_almoxarifado)
+    response = client.post(
+        reverse('requisicoes:autorizar', kwargs={'pk': req_enviada_solicitante.pk})
+    )
+
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db

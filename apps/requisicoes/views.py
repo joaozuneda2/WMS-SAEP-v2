@@ -17,7 +17,12 @@ from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods
 
-from apps.core.exceptions import DadosInvalidos, EstadoInvalido, PermissaoNegada
+from apps.core.exceptions import (
+    ConflitoDominio,
+    DadosInvalidos,
+    EstadoInvalido,
+    PermissaoNegada,
+)
 from apps.estoque.models import SaldoEstoque
 from apps.requisicoes.forms import (
     ItemRequisicaoFormSet,
@@ -28,6 +33,7 @@ from apps.requisicoes.models import Requisicao
 from apps.requisicoes.policies import (
     exigir_pode_editar_rascunho,
     exigir_pode_ver_fila_autorizacao,
+    pode_autorizar_requisicao,
     pode_editar_rascunho,
     pode_enviar_rascunho,
     pode_recusar_requisicao,
@@ -42,6 +48,7 @@ from apps.requisicoes.selectors import (
     requisicoes_visiveis_para,
 )
 from apps.requisicoes.services import (
+    autorizar_requisicao,
     criar_requisicao,
     editar_rascunho,
     enviar_para_autorizacao,
@@ -97,6 +104,10 @@ def _detalhe_context(
         'pode_retornar': (
             requisicao.estado == 'aguardando_autorizacao'
             and pode_retornar_para_rascunho(request.user, requisicao)
+        ),
+        'pode_autorizar': (
+            requisicao.estado == 'aguardando_autorizacao'
+            and pode_autorizar_requisicao(request.user, requisicao)
         ),
         'pode_recusar': (
             requisicao.estado == 'aguardando_autorizacao'
@@ -434,6 +445,40 @@ def fila_autorizacao_view(request):
         'requisicoes/fila_autorizacao.html',
         {'requisicoes': requisicoes},
     )
+
+
+# ---------------------------------------------------------------------------
+# Autorizar requisição — TR-008
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_http_methods(['POST'])
+def autorizar_requisicao_view(request, pk: int):
+    """Autoriza integralmente uma requisição e reserva saldo."""
+    get_object_or_404(requisicoes_visiveis_para(request.user.pk), pk=pk)
+    try:
+        requisicao = autorizar_requisicao(
+            ator_id=request.user.pk,
+            requisicao_id=pk,
+        )
+    except PermissaoNegada as exc:
+        raise PermissionDenied(str(exc))
+    except EstadoInvalido as exc:
+        messages.warning(request, str(exc))
+        return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[pk]))
+    except ConflitoDominio as exc:
+        messages.warning(request, str(exc))
+        return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[pk]))
+    except DadosInvalidos as exc:
+        messages.error(request, str(exc))
+        return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[pk]))
+
+    messages.success(
+        request,
+        f'Requisição {requisicao.numero_publico} autorizada com sucesso.',
+    )
+    return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[requisicao.pk]))
 
 
 # ---------------------------------------------------------------------------

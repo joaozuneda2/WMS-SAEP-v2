@@ -20,6 +20,7 @@ TRANSICOES_VALIDAS: dict[str, set[str]] = {
     },
     EstadoRequisicao.AGUARDANDO_AUTORIZACAO: {
         EstadoRequisicao.RASCUNHO,  # TR-006: retornar para rascunho
+        EstadoRequisicao.AUTORIZADA,  # TR-008: autorizar integralmente
         EstadoRequisicao.RECUSADA,  # TR-011: recusar inteira
     },
 }
