@@ -59,12 +59,14 @@ def _htmx_redirect(request, url: str) -> HttpResponse:
     return redirect(url)
 
 
-def _voltar_url(request) -> str:
+def _voltar_url(request, default: str = '') -> str:
+    if not default:
+        default = reverse('requisicoes:minhas')
     next_url = request.POST.get('next') or request.GET.get('next', '')
     if not url_has_allowed_host_and_scheme(
         next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
     ):
-        next_url = reverse('requisicoes:minhas')
+        next_url = default
     return next_url
 
 
@@ -517,7 +519,12 @@ def retornar_rascunho_view(request, pk: int):
         request,
         f'Requisição {requisicao.numero_publico} retornada para rascunho.',
     )
-    return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[requisicao.pk]))
+    return _htmx_redirect(
+        request,
+        _voltar_url(
+            request, default=reverse('requisicoes:detalhe', args=[requisicao.pk])
+        ),
+    )
 
 
 @login_required
@@ -549,4 +556,9 @@ def recusar_requisicao_view(request, pk: int):
         return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[pk]))
 
     messages.success(request, f'Requisição {requisicao.numero_publico} recusada.')
-    return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[requisicao.pk]))
+    return _htmx_redirect(
+        request,
+        _voltar_url(
+            request, default=reverse('requisicoes:detalhe', args=[requisicao.pk])
+        ),
+    )

@@ -921,6 +921,27 @@ def test_retornar_rascunho_post_criador_redireciona_e_muda_estado(
 
 
 @pytest.mark.django_db
+def test_retornar_rascunho_post_respeita_next_seguro(
+    client, outro_usuario_obras, req_enviada_beneficiario
+):
+    _login(client, outro_usuario_obras)
+    response = client.post(
+        reverse(
+            'requisicoes:retornar_rascunho', kwargs={'pk': req_enviada_beneficiario.pk}
+        ),
+        {
+            'observacao': 'Corrigir item.',
+            'next': reverse('requisicoes:minhas'),
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse('requisicoes:minhas')
+    req_enviada_beneficiario.refresh_from_db()
+    assert req_enviada_beneficiario.estado == EstadoRequisicao.RASCUNHO
+
+
+@pytest.mark.django_db
 def test_retornar_rascunho_beneficiario_redireciona_e_muda_estado(
     client, outro_usuario_obras, req_enviada_beneficiario
 ):
@@ -989,6 +1010,25 @@ def test_recusar_requisicao_post_chefe_redireciona_e_muda_estado(
     assert response.url == reverse(
         'requisicoes:detalhe', kwargs={'pk': req_enviada_solicitante.pk}
     )
+    req_enviada_solicitante.refresh_from_db()
+    assert req_enviada_solicitante.estado == EstadoRequisicao.RECUSADA
+
+
+@pytest.mark.django_db
+def test_recusar_requisicao_post_respeita_next_seguro(
+    client, chefe_obras, req_enviada_solicitante
+):
+    _login(client, chefe_obras)
+    response = client.post(
+        reverse('requisicoes:recusar', kwargs={'pk': req_enviada_solicitante.pk}),
+        {
+            'motivo': 'Necessário revisar quantidades.',
+            'next': reverse('requisicoes:autorizacoes'),
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse('requisicoes:autorizacoes')
     req_enviada_solicitante.refresh_from_db()
     assert req_enviada_solicitante.estado == EstadoRequisicao.RECUSADA
 
