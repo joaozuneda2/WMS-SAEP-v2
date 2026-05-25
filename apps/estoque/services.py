@@ -18,9 +18,7 @@ class ItemReservaEstoque(TypedDict):
 
 
 @transaction.atomic
-def reservar_saldos_para_autorizacao(
-    *, itens: list[ItemReservaEstoque]
-) -> None:
+def reservar_saldos_para_autorizacao(*, itens: list[ItemReservaEstoque]) -> None:
     """Reserva saldo integral para autorização de requisição.
 
     ``itens`` deve conter ``material_id`` e ``quantidade_solicitada`` por item.

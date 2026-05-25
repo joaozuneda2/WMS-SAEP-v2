@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 # Tipos auxiliares
 # ---------------------------------------------------------------------------
 
+
 class ItemInput(TypedDict):
     material_id: int
     quantidade_solicitada: Decimal
