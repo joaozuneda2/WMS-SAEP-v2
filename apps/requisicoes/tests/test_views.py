@@ -1097,6 +1097,7 @@ def test_detalhe_exibe_recusa_para_chefe_e_nao_exibe_retorno(
     assert 'Confirmar recusa' in html
     assert 'Confirmar retorno' not in html
     assert 'data-confirm-message' in html
+    assert html.count('id="decisao-autorizacao-titulo"') == 1
 
 
 @pytest.mark.django_db

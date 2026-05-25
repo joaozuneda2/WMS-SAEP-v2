@@ -185,21 +185,20 @@
       aria-labelledby="decisao-autorizacao-titulo"
     >
       <div class="mb-4">
-        {% if pode_retornar and not pode_recusar %}
-          <h2 id="decisao-autorizacao-titulo" class="text-sm font-semibold text-slate-900">
+        <h2 id="decisao-autorizacao-titulo" class="text-sm font-semibold text-slate-900">
+          {% if pode_retornar and not pode_recusar %}
             Retorno para rascunho
-          </h2>
-          <p class="mt-1 text-sm text-slate-600">
-            Use este bloco para devolver a requisição ao criador com observação opcional.
-          </p>
-        {% else %}
-          <h2 id="decisao-autorizacao-titulo" class="text-sm font-semibold text-slate-900">
+          {% else %}
             Decisão de autorização
-          </h2>
-          <p class="mt-1 text-sm text-slate-600">
+          {% endif %}
+        </h2>
+        <p class="mt-1 text-sm text-slate-600">
+          {% if pode_retornar and not pode_recusar %}
+            Use este bloco para devolver a requisição ao criador com observação opcional.
+          {% else %}
             Revise beneficiário, setor e itens antes de registrar a decisão.
-          </p>
-        {% endif %}
+          {% endif %}
+        </p>
       </div>
 
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
