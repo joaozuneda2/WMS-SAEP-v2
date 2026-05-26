@@ -355,7 +355,7 @@ def exigir_pode_ver_fila_atendimento(ator: User) -> None:
 
 
 def pode_separar_para_retirada(ator: User, requisicao: Requisicao) -> bool:
-    """True se o ator é almoxarifado (chefe ou auxiliar), superuser ou está ativo."""
+    """True se o ator estiver ativo e for almoxarifado (chefe/auxiliar) ou superuser."""
     if not ator.is_active:
         return False
     if ator.is_superuser:
