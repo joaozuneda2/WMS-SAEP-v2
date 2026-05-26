@@ -311,10 +311,7 @@ def pode_cancelar_requisicao(ator: User, requisicao: Requisicao) -> bool:
     if requisicao.estado == EstadoRequisicao.RASCUNHO:
         return ator.pk == requisicao.criador_id
     if requisicao.estado == EstadoRequisicao.AGUARDANDO_AUTORIZACAO:
-        return (
-            ator.pk == requisicao.criador_id
-            or ator.pk == requisicao.beneficiario_id
-        )
+        return ator.pk == requisicao.criador_id or ator.pk == requisicao.beneficiario_id
     if requisicao.estado in (
         EstadoRequisicao.AUTORIZADA,
         EstadoRequisicao.PRONTA_PARA_RETIRADA,

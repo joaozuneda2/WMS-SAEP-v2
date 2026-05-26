@@ -22,6 +22,7 @@ from apps.core.exceptions import DadosInvalidos, EstadoInvalido
 from apps.estoque.models import Material
 from apps.estoque.services import (
     ItemAtendimentoSaldo,
+    ItemLiberacaoReserva,
     liberar_reservas_para_cancelamento,
     consumir_e_liberar_reservas_para_atendimento,
     reservar_saldos_para_autorizacao,
@@ -425,15 +426,18 @@ def cancelar_requisicao(
             code='sem_itens_autorizados',
         )
 
-    liberar_reservas_para_cancelamento(
-        itens=[
+    itens_liberacao: list[ItemLiberacaoReserva] = []
+    for item in itens_reservados:
+        quantidade_autorizada = item.quantidade_autorizada
+        assert quantidade_autorizada is not None
+        itens_liberacao.append(
             {
                 'material_id': item.material_id,
-                'quantidade_reservada': item.quantidade_autorizada,
+                'quantidade_reservada': quantidade_autorizada,
             }
-            for item in itens_reservados
-        ]
-    )
+        )
+
+    liberar_reservas_para_cancelamento(itens=itens_liberacao)
 
     requisicao.estado = EstadoRequisicao.CANCELADA
     requisicao.save(update_fields=['estado', 'atualizado_em'])

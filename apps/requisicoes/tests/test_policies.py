@@ -352,9 +352,7 @@ def test_beneficiario_pode_cancelar_aguardando_autorizacao(
 
 
 @pytest.mark.django_db
-def test_aux_almox_pode_cancelar_autorizada(
-    aux_almoxarifado, solicitante, setor_obras
-):
+def test_aux_almox_pode_cancelar_autorizada(aux_almoxarifado, solicitante, setor_obras):
     req = Requisicao.objects.create(
         estado=EstadoRequisicao.AUTORIZADA,
         numero_publico='REQ-2026-000202',

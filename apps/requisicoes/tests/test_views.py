@@ -1315,7 +1315,10 @@ def test_cancelar_requisicao_post_autorizada_sem_justificativa_renderiza_modal_c
 
     assert response.status_code == 200
     assert response.context['cancelamento_modal_aberto'] is True
-    assert response.context['cancelamento_erro'] == 'Informe a justificativa do cancelamento.'
+    assert (
+        response.context['cancelamento_erro']
+        == 'Informe a justificativa do cancelamento.'
+    )
     assert response.context['cancelamento_requer_justificativa'] is True
     req_autorizada_view.refresh_from_db()
     assert req_autorizada_view.estado == EstadoRequisicao.AUTORIZADA

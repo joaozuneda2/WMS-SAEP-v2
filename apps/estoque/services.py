@@ -111,9 +111,7 @@ class ItemLiberacaoReserva(TypedDict):
 
 
 @transaction.atomic
-def liberar_reservas_para_cancelamento(
-    *, itens: list[ItemLiberacaoReserva]
-) -> None:
+def liberar_reservas_para_cancelamento(*, itens: list[ItemLiberacaoReserva]) -> None:
     """Libera reserva integral em cancelamento sem tocar saldo físico.
 
     ``itens`` deve conter ``material_id`` e ``quantidade_reservada`` por item.
