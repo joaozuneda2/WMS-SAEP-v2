@@ -560,3 +560,20 @@ def test_inativo_nao_pode_atender(usuario_inativo, solicitante, setor_obras):
         'REQ-2026-000405',
     )
     assert pode_atender_retirada(usuario_inativo, req) is False
+
+
+@pytest.mark.django_db
+def test_aux_almox_nao_pode_atender_fora_de_pronta_para_retirada(
+    aux_almoxarifado, solicitante, setor_obras
+):
+    for estado, numero in [
+        (EstadoRequisicao.AUTORIZADA, 'REQ-2026-000406'),
+        (EstadoRequisicao.ATENDIDA, 'REQ-2026-000407'),
+        (EstadoRequisicao.RASCUNHO, 'REQ-2026-000408'),
+        (EstadoRequisicao.AGUARDANDO_AUTORIZACAO, 'REQ-2026-000409'),
+        (EstadoRequisicao.CANCELADA, 'REQ-2026-000410'),
+    ]:
+        req = _req_estado(estado, solicitante, setor_obras, numero)
+        assert pode_atender_retirada(aux_almoxarifado, req) is False, (
+            f'estado={estado} não deveria permitir atendimento'
+        )
