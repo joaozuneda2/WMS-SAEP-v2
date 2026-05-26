@@ -364,6 +364,49 @@ def test_aux_almox_pode_cancelar_autorizada(aux_almoxarifado, solicitante, setor
 
 
 @pytest.mark.django_db
+def test_criador_beneficiario_e_almox_podem_cancelar_pronta_para_retirada(
+    solicitante, outro_usuario_obras, aux_almoxarifado, setor_obras
+):
+    req = Requisicao.objects.create(
+        estado=EstadoRequisicao.PRONTA_PARA_RETIRADA,
+        numero_publico='REQ-2026-000204',
+        criador=solicitante,
+        beneficiario=outro_usuario_obras,
+        setor_beneficiario=setor_obras,
+    )
+
+    assert pode_cancelar_requisicao(solicitante, req) is True
+    assert pode_cancelar_requisicao(outro_usuario_obras, req) is True
+    assert pode_cancelar_requisicao(aux_almoxarifado, req) is True
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'estado_final',
+    [
+        EstadoRequisicao.ATENDIDA,
+        EstadoRequisicao.CANCELADA,
+        EstadoRequisicao.RECUSADA,
+        EstadoRequisicao.ESTORNADA,
+    ],
+)
+def test_cancelamento_negado_em_estados_finais(
+    solicitante, aux_almoxarifado, superuser, setor_obras, estado_final
+):
+    req = Requisicao.objects.create(
+        estado=estado_final,
+        numero_publico='REQ-2026-000205',
+        criador=solicitante,
+        beneficiario=solicitante,
+        setor_beneficiario=setor_obras,
+    )
+
+    assert pode_cancelar_requisicao(solicitante, req) is False
+    assert pode_cancelar_requisicao(aux_almoxarifado, req) is False
+    assert pode_cancelar_requisicao(superuser, req) is False
+
+
+@pytest.mark.django_db
 def test_chefe_setor_nao_pode_cancelar_autorizada_de_outro_setor(
     chefe_obras, solicitante, setor_ti
 ):

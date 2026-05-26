@@ -136,6 +136,11 @@ def liberar_reservas_para_cancelamento(*, itens: list[ItemLiberacaoReserva]) -> 
                 code='item_invalido',
             ) from exc
 
+        if not quantidade.is_finite():
+            raise DadosInvalidos(
+                'Quantidade reservada deve ser maior que zero.',
+                code='quantidade_reservada_invalida',
+            )
         if quantidade <= 0:
             raise DadosInvalidos(
                 'Quantidade reservada deve ser maior que zero.',

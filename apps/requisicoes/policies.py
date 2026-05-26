@@ -305,6 +305,14 @@ def pode_cancelar_requisicao(ator: User, requisicao: Requisicao) -> bool:
     """True se o ator pode cancelar a requisição no estado atual."""
     if not ator.is_active:
         return False
+    estados_cancelaveis = (
+        EstadoRequisicao.RASCUNHO,
+        EstadoRequisicao.AGUARDANDO_AUTORIZACAO,
+        EstadoRequisicao.AUTORIZADA,
+        EstadoRequisicao.PRONTA_PARA_RETIRADA,
+    )
+    if requisicao.estado not in estados_cancelaveis:
+        return False
     if ator.is_superuser:
         return True
 

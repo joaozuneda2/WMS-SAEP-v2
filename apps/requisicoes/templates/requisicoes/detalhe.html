@@ -205,6 +205,7 @@
           {% if pode_cancelar and requisicao.estado == 'rascunho' %}
             <button
               type="button"
+              data-cancelamento-trigger
               class="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 sm:w-auto"
               @click="abrirCancelamento($event)"
             >
@@ -358,6 +359,7 @@
         </div>
         <button
           type="button"
+          data-cancelamento-trigger
           class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 sm:w-auto"
           @click="abrirCancelamento($event)"
         >
@@ -533,12 +535,21 @@
       lastTrigger: null,
       init() {
         if (abrirAoCarregar) {
-          this.$nextTick(() => this.abrirCancelamento());
+          this.$nextTick(() => {
+            this.lastTrigger = this.$root.querySelector(
+              '[data-cancelamento-trigger]'
+            );
+            this.abrirCancelamento();
+          });
         }
       },
       abrirCancelamento(event) {
         if (event?.currentTarget) {
           this.lastTrigger = event.currentTarget;
+        } else if (!this.lastTrigger) {
+          this.lastTrigger = this.$root.querySelector(
+            '[data-cancelamento-trigger]'
+          );
         }
         const dialog = this.$refs.cancelDialog;
         if (!dialog.open) {
@@ -560,8 +571,11 @@
         }
       },
       onDialogClose() {
-        if (this.lastTrigger && typeof this.lastTrigger.focus === 'function') {
-          this.lastTrigger.focus();
+        const alvo =
+          this.lastTrigger ||
+          this.$root.querySelector('[data-cancelamento-trigger]');
+        if (alvo && typeof alvo.focus === 'function') {
+          alvo.focus();
         }
       },
     };

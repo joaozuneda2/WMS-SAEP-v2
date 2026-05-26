@@ -30,7 +30,10 @@ from apps.requisicoes.services import (
     retornar_para_rascunho,
     separar_para_retirada,
 )
-from apps.estoque.services import reservar_saldos_para_autorizacao
+from apps.estoque.services import (
+    liberar_reservas_para_cancelamento,
+    reservar_saldos_para_autorizacao,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -636,6 +639,74 @@ def test_cancelar_requisicao_autorizada_libera_reserva_e_registra_timeline(
     assert cancelamento.justificativa == 'Revisão interna do pedido.'
     assert cancelamento.estado_resultante == EstadoRequisicao.CANCELADA
     assert liberacao.estado_resultante == EstadoRequisicao.CANCELADA
+
+
+@pytest.mark.django_db
+def test_cancelar_requisicao_pronta_para_retirada_libera_reserva_sem_baixa_fisica(
+    requisicao_aguardando, chefe_obras, aux_almoxarifado, material_disponivel
+):
+    from apps.estoque.models import SaldoEstoque
+
+    req = autorizar_requisicao(
+        ator_id=chefe_obras.pk,
+        requisicao_id=requisicao_aguardando.pk,
+    )
+    req = separar_para_retirada(
+        ator_id=aux_almoxarifado.pk,
+        requisicao_id=req.pk,
+    )
+    item = req.itens.get()
+    saldo_antes = SaldoEstoque.objects.get(material=material_disponivel)
+    reservado_antes = saldo_antes.saldo_reservado
+    fisico_antes = saldo_antes.saldo_fisico
+
+    req = cancelar_requisicao(
+        ator_id=req.criador_id,
+        requisicao_id=req.pk,
+        justificativa='Cancelamento antes da retirada.',
+    )
+
+    saldo_depois = SaldoEstoque.objects.get(material=material_disponivel)
+    assert req.estado == EstadoRequisicao.CANCELADA
+    assert saldo_depois.saldo_reservado == (
+        reservado_antes - item.quantidade_autorizada
+    )
+    assert saldo_depois.saldo_fisico == fisico_antes
+    cancelamento = req.eventos.filter(evento=EventoTimeline.CANCELAMENTO).get()
+    liberacao = req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).get()
+    assert cancelamento.justificativa == 'Cancelamento antes da retirada.'
+    assert cancelamento.estado_resultante == EstadoRequisicao.CANCELADA
+    assert liberacao.estado_resultante == EstadoRequisicao.CANCELADA
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'quantidade_reservada',
+    [Decimal('NaN'), Decimal('Infinity'), Decimal('-Infinity')],
+)
+def test_liberar_reservas_para_cancelamento_rejeita_quantidade_nao_finita(
+    material_disponivel, quantidade_reservada
+):
+    from apps.estoque.models import SaldoEstoque
+
+    saldo_antes = SaldoEstoque.objects.get(material=material_disponivel)
+    reservado_antes = saldo_antes.saldo_reservado
+    fisico_antes = saldo_antes.saldo_fisico
+
+    with pytest.raises(DadosInvalidos) as excinfo:
+        liberar_reservas_para_cancelamento(
+            itens=[
+                {
+                    'material_id': material_disponivel.pk,
+                    'quantidade_reservada': quantidade_reservada,
+                }
+            ]
+        )
+
+    saldo_antes.refresh_from_db()
+    assert excinfo.value.code == 'quantidade_reservada_invalida'
+    assert saldo_antes.saldo_reservado == reservado_antes
+    assert saldo_antes.saldo_fisico == fisico_antes
 
 
 @pytest.mark.django_db
