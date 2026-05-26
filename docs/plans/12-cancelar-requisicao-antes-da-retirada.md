@@ -51,8 +51,7 @@
 | `apps/requisicoes/services.py` | `descartar_rascunho` e `cancelar_requisicao` |
 | `apps/requisicoes/views.py` | `cancelar_requisicao_view` e flags de contexto no detalhe |
 | `apps/requisicoes/urls.py` | Rota `<pk>/cancelar/` |
-| `apps/requisicoes/templates/requisicoes/detalhe.html` | Botão contextual e modal de cancelamento |
-| `apps/requisicoes/templates/requisicoes/partials/_cancelar_modal.html` | Modal reutilizável do cancelamento |
+| `apps/requisicoes/templates/requisicoes/detalhe.html` | Botão contextual e modal inline de cancelamento |
 | `apps/requisicoes/tests/test_policies.py` | Cobertura de permissão |
 | `apps/requisicoes/tests/test_services.py` | Cobertura de descarte/cancelamento, timeline e reserva |
 | `apps/requisicoes/tests/test_views.py` | Cobertura do POST, modal e renderização do botão |
@@ -83,10 +82,7 @@ Regras aplicadas:
 ## Test Strategy
 
 ### Policies
-- Criador pode descartar rascunho nunca enviado.
-- Criador pode cancelar rascunho numerado.
-- Criador ou beneficiário podem cancelar `aguardando_autorizacao`.
-- Criador, beneficiário, almoxarifado (aux/chefe) e superusuário podem cancelar `autorizada` ou `pronta_para_retirada`.
+- Pode descartar rascunho nunca enviado (criador); pode cancelar rascunho numerado (criador); pode cancelar `aguardando_autorizacao` (criador ou beneficiário); pode cancelar `autorizada` ou `pronta_para_retirada` (criador, beneficiário, almoxarifado (aux/chefe) e superusuário).
 - Usuário fora do papel ou estado final recebe `False`.
 
 ### Services
