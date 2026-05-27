@@ -103,7 +103,7 @@ def test_seed_dev_cria_elenco_canonico_e_converge(settings, monkeypatch):
     User = get_user_model()
     assert User.objects.count() == 6
     assert User.objects.get(matricula='SUPER001').is_superuser
-    assert User.objects.get(matricula='ALMOX002').setor == obras
+    assert User.objects.get(matricula='ALMOX002').setor == almox
     assert VinculoAuxiliar.objects.filter(ativo=True).count() == 2
     assert VinculoAuxiliar.objects.get(usuario__matricula='ALMOX002').setor == almox
     assert VinculoAuxiliar.objects.get(usuario__matricula='OBRAS002').setor == obras

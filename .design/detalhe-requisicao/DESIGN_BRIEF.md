@@ -99,14 +99,14 @@ Ações disponíveis por estado e papel. Apenas ações permitidas aparecem — 
 | Estado | Ação | Papel | Tipo de interação |
 |---|---|---|---|
 | Rascunho | Editar | Criador | Navega para `/requisicoes/<id>/editar/` |
-| Rascunho | Enviar para autorização | Criador | POST direto (confirmação simples) |
+| Rascunho | Enviar para autorização | Criador | Modal de confirmação simples (sem textarea) |
 | Rascunho | Cancelar (se numerado) | Criador | Modal sem justificativa |
 | Rascunho | Descartar (se sem número) | Criador | Modal de confirmação destrutiva |
 | Aguardando autorização | Retornar para rascunho | Criador / Beneficiário | Modal com justificativa opcional |
 | Aguardando autorização | Cancelar | Criador / Beneficiário | Modal sem justificativa obrigatória |
-| Aguardando autorização | Autorizar | Chefe setor | POST direto (confirmação simples) |
+| Aguardando autorização | Autorizar | Chefe setor | Modal de confirmação simples (sem textarea) |
 | Aguardando autorização | Recusar | Chefe setor | Modal com motivo **obrigatório** |
-| Autorizada | Separar para retirada | Aux / Chefe Almox | POST direto (confirmação simples) |
+| Autorizada | Separar para retirada | Aux / Chefe Almox | Modal de confirmação simples (sem textarea) |
 | Autorizada | Cancelar | Criador / Beneficiário / Almox | Modal com justificativa **obrigatória** |
 | Pronta para retirada | Atender | Aux / Chefe Almox | Navega para `/requisicoes/<id>/atender/` |
 | Pronta para retirada | Cancelar | Criador / Beneficiário / Almox | Modal com justificativa **obrigatória** |
@@ -234,3 +234,61 @@ Página separada. Fora do escopo deste brief — requer brief próprio quando o 
 - Cópia de requisição recusada/atendida.
 - Notificações em tempo real / polling HTMX.
 - Paginação da timeline.
+
+## Amendments — Remediação QA 2026-05-26
+
+### Modal universal (Q2/Q3)
+
+- **Todas** as ações de transição usam modal (destrutivas E de avanço). `window.confirm()` proibido (P2-02).
+- **Modal sem textarea** para enviar/autorizar/separar: título contextual + linha de consequência + Voltar/Confirmar.
+- **Stack:** Alpine controla open/close, trap de foco, ESC, click no backdrop. HTMX submete e retorna fragment com erros ou `HX-Redirect` em sucesso.
+- **Centramento:** `<dialog>` aberto via `showModal()` perde centramento por reset de Tailwind v4 preflight. Aplicar `m-auto` explícito (P1-01).
+- **Foco pós-close:** referência ao `lastTrigger` em cada modal — Alpine retorna foco ao botão de origem ao fechar.
+
+### Cabeçalho — Seção 1 (P2-03)
+
+- Campo "Enviada em" obrigatório no cabeçalho quando `estado >= aguardando_autorizacao` e `enviada_em` não nulo.
+- Hoje renderiza só "Criada em" + "Atualizada em" — incorreto.
+
+### Subtelas: back-arrow (Q5 B2)
+
+- Detalhe e atender NÃO renderizam hamburger; renderizam back-arrow no `topbar_leading`. Drawer não acessível enquanto subtela aberta. Intencional — alinhado a Material App Bar.
+- Findings P1-03 → resolvido por brief amend (não código).
+
+### Preservação de contexto: `?next` (Q8)
+
+- Detalhe lê `?next` da URL; expõe `voltar_url` no template.
+- TODOS os forms de transição incluem `<input type="hidden" name="next" value="{{ voltar_url }}">`.
+- View POST: `return redirect(request.POST.get('next') or default_url)`.
+- Resolve P2-05.
+
+### Ações inline (P1-04/P1-05)
+
+- "Retornar para rascunho", "Cancelar" (criador/beneficiário), "Recusar" (chefe) hoje renderizam como **forms inline** na página. Brief sempre exigiu modal. Migrar para modal universal.
+
+### "Registrar retirada" (P2-10)
+
+- Em `pronta_para_retirada`, ação "Registrar retirada" (link p/ `/requisicoes/<id>/atender/`) deve ter estilo de **botão primário sólido** (azul). Hoje é `<a>` sem CTA visual.
+
+### Título "Rascunho" sem PK (P3-01)
+
+- Fallback do título quando `numero_publico` é nulo: literal `"Rascunho"`. Sem `#N`. PK interno não vaza para UI.
+
+### Quantidades — formatação unidade-aware (P3-02)
+
+- Helper `formatar_quantidade(qtd, unidade)`:
+  - `Unidade` → inteiro (`"3"`, não `"3,000"`)
+  - `kg`, `L`, `m` → 1 casa decimal (`"2,5"`)
+  - Padrão (decimal fracionário): manter casas significativas
+- Aplica em tabela de itens E formulário de atendimento.
+
+### Timeline — não emitir "Liberação de reserva" (P3-03, Q9)
+
+- `services.py:493-498` (cancelamento) e `services.py:911-917` (atendimento parcial): remover `TimelineRequisicao.objects.create(evento=LIBERACAO_RESERVA, ...)`.
+- Manter o enum `EventoTimeline.LIBERACAO_RESERVA` para compat. com registros antigos no DB.
+- Opcional: salvar `metadata['liberou_reserva']=True` no evento principal para auditoria.
+
+### Mobile — overflow tabela itens (P1-06, Q6)
+
+- Tabela de itens em `<div class="overflow-x-auto">` + sombra/indicador de scroll lateral.
+- Manter `<table>` único — não duplicar como card.

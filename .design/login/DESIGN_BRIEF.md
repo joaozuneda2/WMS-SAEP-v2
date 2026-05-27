@@ -98,3 +98,22 @@ Erro:      [texto do AuthenticationForm — não sobrescrever]
 - Logo/marca visual além do texto.
 - `_messages.html` framework — login usa `form.errors`, não `messages`.
 - Qualquer outra página além do formulário de login.
+
+## Amendments — Remediação QA 2026-05-26
+
+### Redirect pós-login (Q7 / Q7b — P2-01)
+
+- `LOGIN_REDIRECT_URL = '/'`. Rota `/` mapeia para `core.views.home`, que age como **dispatcher por papel** (302):
+
+| Papel efetivo | Destino |
+|---------------|---------|
+| `chefe_almoxarifado` | `/requisicoes/atendimentos/` |
+| `auxiliar_almoxarifado` | `/requisicoes/atendimentos/` |
+| `chefe_setor` | `/requisicoes/autorizacoes/` |
+| `auxiliar_setor` | `/requisicoes/minhas/` |
+| `solicitante` | `/requisicoes/minhas/` |
+| superuser/staff sem papel | `/admin/` |
+
+- Prioridade quando user tem múltiplos papéis: ordem da tabela (cima → baixo).
+- Click no logo do topbar = link para `/` → mesmo dispatcher executa novamente.
+- Pages `home.html` e painel `/requisicoes/` são removidas (P2-08 + P2-09).

@@ -77,10 +77,19 @@ CSS custom property `--app-bar-height` permite que `<main>` calcule offset e que
 
 | Breakpoint | Comportamento |
 |---|---|
-| `< 640px` | Toggle abre drawer lateral (popover) com seções Navegação e Conta; ações inline limitadas |
-| `≥ 640px` | Toggle escondido; drawer inacessível via teclado; user block completo (avatar + nome + matrícula) |
+| Todos os viewports | Toggle hamburger abre drawer lateral (popover) com seções Navegação e Conta. Sem variant inline em desktop. |
 
 `flex-wrap` permite que o nav vá para baixo quando aberto no mobile sem quebrar o leading/user.
+
+### Amendments — Remediação QA 2026-05-26
+
+**Decisão Q5 (B2):** padrão Material App Bar uniforme em todos os viewports — drawer único, sem render inline em `lg+`.
+
+- Toggle hamburger SEMPRE visível em telas-lista (`/requisicoes/minhas/`, `/requisicoes/autorizacoes/`, `/requisicoes/atendimentos/`).
+- Subtelas (detalhe, atender, rascunho_form) substituem hamburger por **back-arrow** no `topbar_leading` (pattern Material). Drawer não é acessível enquanto subtela está aberta — usuário volta antes de navegar para outra seção. Isso é intencional e ergonômico para fluxos transacionais.
+- Drawer mobile DEVE ter **backdrop overlay** (`fixed inset-0 bg-slate-900/40`) que escurece o conteúdo atrás e fecha o drawer ao receber click. Resolve P2-06.
+
+**Findings remediados por amend (não exigem código):** P1-02 (drawer em desktop é intencional), P1-03 (back-arrow em subtela é intencional), P2-07 (drawer em tablet é intencional).
 
 ## Fora do escopo (documentado, não implementado)
 

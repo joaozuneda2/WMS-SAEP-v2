@@ -56,8 +56,9 @@ Um usuário com múltiplos papéis vê a união dos links pertinentes.
 
 ### Responsivo
 
-- **Desktop**: links visíveis horizontalmente no nav.
-- **Mobile/tablet**: botão "Menu" → dropdown simples. Sem sidebar.
+- **Todos os viewports**: drawer único acionado por hamburger no `topbar_leading`. Sem variant inline em desktop. Ver `.design/topbar/DESIGN_BRIEF.md` para detalhes (drawer + backdrop + Material App Bar pattern).
+
+> **Nota (Remediação QA 2026-05-26):** versão anterior previa "links inline em lg+". Decisão Q5 (B2) consolida drawer único alinhado ao topbar brief. P1-02/P2-07 removidos do escopo de fix.
 
 ### Container de conteúdo
 
@@ -94,6 +95,8 @@ Não herdar o `max-w-5xl` do `base.html` existente — telas operacionais precis
 **URL sugerida**: `/requisicoes/autorizacoes/`  
 **Descrição**: Requisições do setor do chefe no estado `aguardando_autorizacao`.
 
+> **Coluna de data:** "Enviada em" (P2-04). Hoje renderiza "Atualizada em" — incorreto.
+
 #### Colunas
 
 | Campo | Notas |
@@ -116,6 +119,8 @@ Estado não aparece na coluna — todos os itens desta fila têm o mesmo estado.
 **Papéis**: Auxiliar de almoxarifado, Chefe de almoxarifado  
 **URL sugerida**: `/requisicoes/atendimentos/`  
 **Descrição**: Requisições no estado `autorizada` (e/ou `pronta_para_retirada` se aplicável) aguardando atendimento.
+
+> **Coluna de data:** "Autorizada em" (P2-04). Hoje renderiza "Atualizada em" — incorreto.
 
 #### Colunas
 
@@ -196,3 +201,14 @@ Top nav mobile: links colapsam em dropdown via Alpine.js `x-show` / `x-data`.
 - Polling HTMX / atualização em tempo real.
 - Tela de perfil do usuário.
 - Gestão de setores, usuários, materiais — escopo admin.
+
+## Amendments — Remediação QA 2026-05-26
+
+| ID | Decisão |
+|----|---------|
+| Q5 (B2) | Drawer único; sem inline em `lg+`. Atualizado em "Responsivo". |
+| Q7 / Q7b | Rota `/` = dispatcher por papel (302). Mata painel `/requisicoes/` e `home.html`. Link "Painel de requisições" do home.html deixa de existir. |
+| Q11 | Nav "Minhas Requisições" leva direto a `/requisicoes/minhas/` (não passa por `/requisicoes/`). |
+| Q8 | Botão "Ver/Analisar/Atender" passa `?next={{ request.path }}` para preservar contexto no detalhe. |
+| P2-04 | Filas usam colunas de data específicas (Enviada em / Autorizada em). Atualizado em cada bloco. |
+| Aria-live | Zona de mensagens (`_messages.html`) deve ter `aria-live="polite"` para feedback dinâmico (P2 risco). |
