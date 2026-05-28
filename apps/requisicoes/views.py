@@ -101,10 +101,12 @@ def _detalhe_context(
     eventos = list(
         requisicao.eventos.select_related('ator').order_by('-criado_em', '-id')
     )
-    enviada_em = next(
-        (e.criado_em for e in eventos if e.evento == 'envio_autorizacao'),
-        None,
-    )
+    enviada_em = None
+    if requisicao.estado != EstadoRequisicao.RASCUNHO:
+        enviada_em = next(
+            (e.criado_em for e in eventos if e.evento == 'envio_autorizacao'),
+            None,
+        )
     cancelavel = pode_cancelar_requisicao(request.user, requisicao)
     if cancelavel:
         if (

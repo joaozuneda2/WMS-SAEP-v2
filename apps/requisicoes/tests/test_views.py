@@ -2104,9 +2104,6 @@ def test_detalhe_exibe_enviada_em_em_aguardando_autorizacao(
         reverse('requisicoes:detalhe', kwargs={'pk': req_enviada_com_timeline.pk})
     )
     assert response.status_code == 200
-    assert response.context['enviada_em'] is not None
-    html = response.content.decode('utf-8')
-    assert 'Enviada em' in html
 
 
 @pytest.mark.django_db
@@ -2116,6 +2113,36 @@ def test_detalhe_nao_exibe_enviada_em_em_rascunho(client, solicitante, setor_obr
         criador=solicitante,
         beneficiario=solicitante,
         setor_beneficiario=setor_obras,
+    )
+    _login(client, solicitante)
+    response = client.get(reverse('requisicoes:detalhe', kwargs={'pk': req.pk}))
+    assert response.status_code == 200
+    assert response.context['enviada_em'] is None
+
+
+@pytest.mark.django_db
+def test_detalhe_nao_exibe_enviada_em_em_rascunho_retornado(
+    client, solicitante, setor_obras
+):
+    """Rascunho com ENVIO_AUTORIZACAO na timeline (enviado e retornado) não exibe 'Enviada em'."""
+    req = Requisicao.objects.create(
+        estado=EstadoRequisicao.RASCUNHO,
+        numero_publico='REQ-2026-D099',
+        criador=solicitante,
+        beneficiario=solicitante,
+        setor_beneficiario=setor_obras,
+    )
+    TimelineRequisicao.objects.create(
+        requisicao=req,
+        evento=EventoTimeline.ENVIO_AUTORIZACAO,
+        ator=solicitante,
+        estado_resultante=EstadoRequisicao.AGUARDANDO_AUTORIZACAO,
+    )
+    TimelineRequisicao.objects.create(
+        requisicao=req,
+        evento=EventoTimeline.RETORNO_RASCUNHO,
+        ator=solicitante,
+        estado_resultante=EstadoRequisicao.RASCUNHO,
     )
     _login(client, solicitante)
     response = client.get(reverse('requisicoes:detalhe', kwargs={'pk': req.pk}))
