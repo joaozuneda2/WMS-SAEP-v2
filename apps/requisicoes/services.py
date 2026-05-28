@@ -489,12 +489,7 @@ def _cancelar_requisicao_impl(
         ator=ator,
         estado_resultante=EstadoRequisicao.CANCELADA,
         justificativa=justificativa_limpa,
-    )
-    TimelineRequisicao.objects.create(
-        requisicao=requisicao,
-        evento=EventoTimeline.LIBERACAO_RESERVA,
-        ator=ator,
-        estado_resultante=EstadoRequisicao.CANCELADA,
+        metadata={'liberou_reserva': True},
     )
 
     return requisicao
@@ -895,6 +890,8 @@ def registrar_atendimento(
     metadata_principal: dict[str, object] = {'retirante': retirante}
     if observacao_limpa:
         metadata_principal['observacao'] = observacao_limpa
+    if houve_liberacao:
+        metadata_principal['liberou_reserva'] = True
 
     TimelineRequisicao.objects.create(
         requisicao=requisicao,
@@ -907,14 +904,6 @@ def registrar_atendimento(
         estado_resultante=EstadoRequisicao.ATENDIDA,
         metadata=metadata_principal,
     )
-    if houve_liberacao:
-        TimelineRequisicao.objects.create(
-            requisicao=requisicao,
-            evento=EventoTimeline.LIBERACAO_RESERVA,
-            ator=ator,
-            estado_resultante=EstadoRequisicao.ATENDIDA,
-            metadata={'origem': 'atendimento_parcial'},
-        )
 
     return requisicao
 

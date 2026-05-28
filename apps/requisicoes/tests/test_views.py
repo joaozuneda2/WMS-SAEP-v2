@@ -384,6 +384,63 @@ def test_buscar_materiais_shape(client, solicitante, material_disponivel):
 
 
 # ---------------------------------------------------------------------------
+# buscar_beneficiarios
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_buscar_beneficiarios_sem_login(client):
+    resp = client.get(reverse('requisicoes:buscar_beneficiarios'))
+    assert resp.status_code == 302
+
+
+@pytest.mark.django_db
+def test_buscar_beneficiarios_chefe_setor_retorna_usuarios_do_setor(
+    client, chefe_obras, outro_usuario_obras, usuario_ti
+):
+    _login(client, chefe_obras)
+    resp = client.get(reverse('requisicoes:buscar_beneficiarios'), {'q': ''})
+    assert resp.status_code == 200
+    data = resp.json()
+    ids = [r['id'] for r in data['resultados']]
+    assert outro_usuario_obras.pk in ids
+    assert usuario_ti.pk not in ids
+
+
+@pytest.mark.django_db
+def test_buscar_beneficiarios_filtra_por_nome(client, chefe_obras, outro_usuario_obras):
+    _login(client, chefe_obras)
+    resp = client.get(reverse('requisicoes:buscar_beneficiarios'), {'q': 'Maria'})
+    assert resp.status_code == 200
+    data = resp.json()
+    nomes = [r['nome'] for r in data['resultados']]
+    assert 'Maria Obras' in nomes
+
+
+@pytest.mark.django_db
+def test_buscar_beneficiarios_solicitante_puro_retorna_vazio(client, solicitante):
+    _login(client, solicitante)
+    resp = client.get(reverse('requisicoes:buscar_beneficiarios'), {'q': ''})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['resultados'] == []
+
+
+@pytest.mark.django_db
+def test_buscar_beneficiarios_shape(client, chefe_obras, outro_usuario_obras):
+    _login(client, chefe_obras)
+    resp = client.get(reverse('requisicoes:buscar_beneficiarios'), {'q': ''})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert 'resultados' in data
+    for r in data['resultados']:
+        assert 'id' in r
+        assert 'nome' in r
+        assert 'matricula' in r
+        assert 'label' in r
+
+
+# ---------------------------------------------------------------------------
 # Minhas requisições — lista
 # ---------------------------------------------------------------------------
 

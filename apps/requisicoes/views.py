@@ -532,6 +532,39 @@ def buscar_materiais(request):
     return JsonResponse({'resultados': resultado})
 
 
+@login_required
+@require_GET
+def buscar_beneficiarios(request):
+    """Retorna beneficiários elegíveis para autocomplete (JSON).
+
+    Restrição de escopo idêntica à de criação de requisição.
+    """
+    try:
+        escopo = resolver_escopo_criacao_requisicao(request.user)
+    except PermissaoNegada:
+        return JsonResponse(
+            {'error': 'Sem permissão para buscar beneficiários.'}, status=403
+        )
+
+    q = request.GET.get('q', '').strip()
+    qs = escopo.beneficiarios
+    if q:
+        qs = qs.filter(nome__icontains=q) | qs.filter(matricula__icontains=q)
+
+    resultado = [
+        {
+            'id': u.pk,
+            'nome': u.nome,
+            'matricula': u.matricula,
+            'setor': u.setor.nome if u.setor else '',
+            'label': f'{u.nome} ({u.matricula})',
+        }
+        for u in qs[:20]
+    ]
+
+    return JsonResponse({'resultados': resultado})
+
+
 # ---------------------------------------------------------------------------
 # Minhas requisições — lista
 # ---------------------------------------------------------------------------

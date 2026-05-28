@@ -1,4 +1,5 @@
 {% extends "requisicoes/base.html" %}
+{% load requisicoes_tags %}
 
 {% block title %}
   {% if requisicao.numero_publico %}{{ requisicao.numero_publico }}{% else %}Rascunho #{{ requisicao.pk }}{% endif %} — WMS-SAEP
@@ -43,6 +44,18 @@
         from { opacity: 0; }
         to { opacity: 1; }
       }
+    }
+
+    /* Scroll shadow horizontal — indica conteúdo além da borda */
+    .scroll-shadow-x {
+      background:
+        linear-gradient(to right, #fff 30%, rgba(255,255,255,0)) left center / 2rem 100%,
+        linear-gradient(to left, #fff 30%, rgba(255,255,255,0)) right center / 2rem 100%,
+        radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.10), transparent) left center / .625rem 100%,
+        radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.10), transparent) right center / .625rem 100%;
+      background-repeat: no-repeat;
+      background-color: #fff;
+      background-attachment: local, local, scroll, scroll;
     }
   </style>
 {% endblock %}
@@ -108,7 +121,7 @@
 
     {% if itens %}
       {% with estado=requisicao.estado %}
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto scroll-shadow-x rounded-sm">
           <table class="min-w-full divide-y divide-slate-200 text-sm">
             <caption class="sr-only">Itens da requisição com material, quantidade solicitada e, quando aplicável, autorizada e entregue.</caption>
             <thead class="bg-slate-50">
@@ -131,15 +144,15 @@
                     <span class="text-slate-600">— {{ item.material.nome }}</span>
                     <span class="text-xs text-slate-400">({{ item.material.get_unidade_display }})</span>
                   </td>
-                  <td class="px-3 py-2 text-right tabular-nums text-slate-900">{{ item.quantidade_solicitada|floatformat:"-3" }}</td>
+                  <td class="px-3 py-2 text-right tabular-nums text-slate-900">{{ item.quantidade_solicitada|formatar_quantidade:item.material.unidade }}</td>
                   {% if estado == 'autorizada' or estado == 'pronta_para_retirada' or estado == 'atendida' or estado == 'estornada' or estado == 'cancelada' %}
                     <td class="px-3 py-2 text-right tabular-nums text-slate-900">
-                      {% if item.quantidade_autorizada is not None %}{{ item.quantidade_autorizada|floatformat:"-3" }}{% else %}<span class="text-slate-300">—</span>{% endif %}
+                      {% if item.quantidade_autorizada is not None %}{{ item.quantidade_autorizada|formatar_quantidade:item.material.unidade }}{% else %}<span class="text-slate-300">—</span>{% endif %}
                     </td>
                   {% endif %}
                   {% if estado == 'atendida' or estado == 'estornada' %}
                     <td class="px-3 py-2 text-right tabular-nums text-slate-900">
-                      {% if item.quantidade_entregue is not None %}{{ item.quantidade_entregue|floatformat:"-3" }}{% else %}<span class="text-slate-300">—</span>{% endif %}
+                      {% if item.quantidade_entregue is not None %}{{ item.quantidade_entregue|formatar_quantidade:item.material.unidade }}{% else %}<span class="text-slate-300">—</span>{% endif %}
                     </td>
                   {% endif %}
                 </tr>

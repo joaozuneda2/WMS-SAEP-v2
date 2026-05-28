@@ -669,10 +669,10 @@ def test_cancelar_requisicao_autorizada_libera_reserva_e_registra_timeline(
     assert saldo_depois.saldo_reservado == reservado_antes - Decimal('2')
     assert saldo_depois.saldo_fisico == fisico_antes
     cancelamento = req.eventos.filter(evento=EventoTimeline.CANCELAMENTO).get()
-    liberacao = req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).get()
     assert cancelamento.justificativa == 'Revisão interna do pedido.'
     assert cancelamento.estado_resultante == EstadoRequisicao.CANCELADA
-    assert liberacao.estado_resultante == EstadoRequisicao.CANCELADA
+    assert cancelamento.metadata == {'liberou_reserva': True}
+    assert not req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).exists()
 
 
 @pytest.mark.django_db
@@ -707,10 +707,10 @@ def test_cancelar_requisicao_pronta_para_retirada_libera_reserva_sem_baixa_fisic
     )
     assert saldo_depois.saldo_fisico == fisico_antes
     cancelamento = req.eventos.filter(evento=EventoTimeline.CANCELAMENTO).get()
-    liberacao = req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).get()
     assert cancelamento.justificativa == 'Cancelamento antes da retirada.'
     assert cancelamento.estado_resultante == EstadoRequisicao.CANCELADA
-    assert liberacao.estado_resultante == EstadoRequisicao.CANCELADA
+    assert cancelamento.metadata == {'liberou_reserva': True}
+    assert not req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).exists()
 
 
 @pytest.mark.django_db
@@ -1582,9 +1582,9 @@ def test_registrar_atendimento_parcial_libera_reserva_e_registra_evento(
     assert parcial.metadata == {
         'retirante': 'Carlos',
         'observacao': 'Retirada parcial.',
+        'liberou_reserva': True,
     }
-    liberacao = req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).get()
-    assert liberacao.metadata == {'origem': 'atendimento_parcial'}
+    assert not req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).exists()
 
 
 @pytest.mark.django_db

@@ -1,5 +1,6 @@
 {% extends "requisicoes/base.html" %}
 {% load static %}
+{% load requisicoes_tags %}
 
 {% block title %}
   Registrar atendimento — {% if requisicao.numero_publico %}{{ requisicao.numero_publico }}{% else %}Rascunho #{{ requisicao.pk }}{% endif %}
@@ -105,7 +106,7 @@
                     <div class="text-xs text-slate-500">{{ item.material.codigo }}</div>
                     {{ form.item_id }}
                   </td>
-                  <td class="px-3 py-3 text-right text-slate-700 tabular-nums" translate="no">{{ item.quantidade_autorizada }}</td>
+                  <td class="px-3 py-3 text-right text-slate-700 tabular-nums" translate="no">{{ item.quantidade_autorizada|formatar_quantidade:item.material.unidade }}</td>
                   <td class="px-3 py-3 text-right">
                     <label class="sr-only" for="{{ form.quantidade_entregue.id_for_label }}">
                       Quantidade entregue para {{ item.material.nome }}
