@@ -114,6 +114,56 @@ def test_home_solicitante_redireciona_minhas(client):
     assert resposta['Location'] == reverse('requisicoes:minhas')
 
 
+@pytest.mark.django_db
+def test_home_staff_com_papel_almox_vai_para_atendimentos(client):
+    """is_staff não bypassa o dispatcher — papel operacional tem prioridade."""
+    User = get_user_model()
+    setor = Setor.objects.create(
+        codigo='ALM3',
+        nome='Almoxarifado',
+        classificacao=SetorClassificacao.ALMOXARIFADO,
+    )
+    usuario = User.objects.create_user(
+        matricula='STAF-001',
+        password='senha-forte-123',
+        nome='Staff Almox',
+        setor=setor,
+        is_staff=True,
+    )
+    VinculoAuxiliar.objects.create(usuario=usuario, setor=setor, ativo=True)
+    client.force_login(usuario)
+    resposta = client.get(reverse('core:home'))
+    assert resposta.status_code == 302
+    assert resposta['Location'] == reverse('requisicoes:atendimentos')
+
+
+@pytest.mark.django_db
+def test_home_multi_papel_almox_chefe_vai_para_atendimentos(client):
+    """Usuário com almoxarifado E chefe de setor comum → almox ganha (prioridade)."""
+    User = get_user_model()
+    setor_almox = Setor.objects.create(
+        codigo='ALM4',
+        nome='Almoxarifado',
+        classificacao=SetorClassificacao.ALMOXARIFADO,
+    )
+    setor_comum = Setor.objects.create(
+        codigo='OBR4', nome='Obras', classificacao=SetorClassificacao.COMUM
+    )
+    usuario = User.objects.create_user(
+        matricula='MULT-001',
+        password='senha-forte-123',
+        nome='Multi Papel',
+        setor=setor_almox,
+    )
+    VinculoAuxiliar.objects.create(usuario=usuario, setor=setor_almox, ativo=True)
+    setor_comum.chefe = usuario
+    setor_comum.save(update_fields=['chefe'])
+    client.force_login(usuario)
+    resposta = client.get(reverse('core:home'))
+    assert resposta.status_code == 302
+    assert resposta['Location'] == reverse('requisicoes:atendimentos')
+
+
 def test_seed_dev_exige_flag_de_ambiente_local(settings, monkeypatch):
     settings.DEBUG = True
     monkeypatch.delenv('SEED_DEV_HABILITADO', raising=False)

@@ -14,7 +14,7 @@ from apps.requisicoes.policies import (
 def home(request):
     """Dispatcher pós-login — redireciona por papel efetivo do usuário."""
     user = request.user
-    if user.is_superuser or user.is_staff:
+    if user.is_superuser:
         return redirect('/admin/')
     if pode_ver_fila_atendimento(user):
         return redirect(reverse('requisicoes:atendimentos'))
