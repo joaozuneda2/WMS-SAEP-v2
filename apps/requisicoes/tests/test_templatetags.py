@@ -4,7 +4,50 @@ from decimal import Decimal
 
 import pytest
 
-from apps.requisicoes.templatetags.requisicoes_tags import formatar_quantidade
+from apps.requisicoes.templatetags.requisicoes_tags import (
+    formatar_quantidade,
+    get_choice_label,
+)
+
+
+# ---------------------------------------------------------------------------
+# Helpers para testar get_choice_label sem instanciar Form completo
+# ---------------------------------------------------------------------------
+
+class _FakeInnerField:
+    def __init__(self, choices):
+        self.choices = choices
+
+
+class _FakeField:
+    """Simula um BoundField com atributo .field.choices."""
+
+    def __init__(self, choices):
+        self.field = _FakeInnerField(choices)
+
+
+_CHOICES = [('a', 'Label A'), ('b', 'Label B'), (1, 'Um')]
+
+
+@pytest.mark.parametrize(
+    'value, esperado',
+    [
+        # Match por string
+        ('a', 'Label A'),
+        ('b', 'Label B'),
+        # Match com chave inteira (conversão str)
+        ('1', 'Um'),
+        # Valor ausente → string vazia
+        ('z', ''),
+        # Valor vazio → string vazia (guard)
+        ('', ''),
+        # None → string vazia (guard)
+        (None, ''),
+    ],
+)
+def test_get_choice_label(value, esperado):
+    field = _FakeField(_CHOICES)
+    assert get_choice_label(field, value) == esperado
 
 
 @pytest.mark.parametrize(

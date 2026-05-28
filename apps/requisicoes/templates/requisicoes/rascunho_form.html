@@ -140,7 +140,7 @@
                   role="combobox"
                   aria-autocomplete="list"
                   :aria-expanded="aberto"
-                  :aria-activedescendant="ativo >= 0 ? 'benef-opt-' + ativo : false"
+                  :aria-activedescendant="ativo >= 0 ? 'benef-opt-' + ativo : null"
                 />
                 <span x-show="buscando" x-cloak class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" aria-hidden="true">
                   <svg class="h-4 w-4 animate-spin motion-reduce:animate-none text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -150,7 +150,7 @@
                 </span>
               </div>
               <ul
-                x-show="aberto"
+                x-show="aberto || (!buscando && query.length >= 1 && resultados.length === 0)"
                 x-cloak
                 role="listbox"
                 aria-label="Resultados de beneficiários"
@@ -346,6 +346,8 @@
       },
 
       buscarComDebounce() {
+        // Qualquer edição invalida a seleção anterior até nova escolha explícita.
+        this.$refs.hiddenInput.value = '';
         clearTimeout(this._debounceTimer);
         this._debounceTimer = setTimeout(() => this.buscar(this.query), 300);
       },
@@ -417,12 +419,26 @@
         this.query = this.$refs.labelInput?.value || '';
       },
 
-      async buscar(event) {
-        this.query = event.target.value;
-        if (this.query.length < 2) {
+      async buscarTodos() {
+        if (!this.query) {
+          await this.buscar('');
+        } else if (this.resultados.length > 0) {
+          this.aberto = true;
+        } else {
+          await this.buscar(this.query);
+        }
+      },
+
+      async buscar(q) {
+        this.query = q;
+        if (this.query.length > 0 && this.query.length < 2) {
+          // Qualquer edição invalida a seleção anterior até nova escolha explícita.
+          this.$refs.materialIdInput.value = '';
           this.fecharDropdown();
           return;
         }
+        // Limpa seleção anterior ao buscar nova query.
+        this.$refs.materialIdInput.value = '';
         this.buscando = true;
         try {
           const res = await fetch(`{% url 'requisicoes:buscar_materiais' %}?q=${encodeURIComponent(this.query)}`, {
@@ -430,7 +446,7 @@
           });
           const data = await res.json();
           this.resultados = data.resultados || [];
-          this.aberto = true;
+          this.aberto = this.resultados.length > 0;
           this.ativo = -1;
         } catch (e) {
           this.resultados = [];

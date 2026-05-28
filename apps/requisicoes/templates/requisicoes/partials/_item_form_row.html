@@ -35,16 +35,18 @@ Parâmetros de contexto:
         data-lpignore="true"
         data-1p-ignore="true"
         placeholder="Buscar por código ou descrição…"
-        @input.debounce.300ms="buscar"
-        @focus="abrirDropdown()"
+        @input.debounce.300ms="buscar($event.target.value)"
+        @focus="buscarTodos()"
         @keydown.escape="fecharDropdown()"
         @keydown.arrow-down.prevent="selecionarProximo()"
         @keydown.arrow-up.prevent="selecionarAnterior()"
         @keydown.enter.prevent="confirmarSelecao()"
         role="combobox"
         aria-autocomplete="list"
+        aria-haspopup="listbox"
+        aria-controls="mat-listbox-{{ form_index }}"
         :aria-expanded="aberto"
-        :aria-activedescendant="ativo >= 0 ? 'mat-opt-' + ativo + '-' + {{ form_index }} : false"
+        :aria-activedescendant="ativo >= 0 ? 'mat-opt-' + ativo + '-' + {{ form_index }} : null"
       >
       <span x-show="buscando" x-cloak class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" aria-hidden="true">
         <svg class="h-4 w-4 animate-spin motion-reduce:animate-none text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -55,6 +57,7 @@ Parâmetros de contexto:
       <ul
         x-show="aberto"
         x-cloak
+        id="mat-listbox-{{ form_index }}"
         role="listbox"
         aria-label="Resultados de materiais"
         class="absolute z-20 mt-1 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white text-sm shadow-lg"
