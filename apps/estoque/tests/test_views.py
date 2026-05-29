@@ -69,7 +69,9 @@ URL_BUSCAR = reverse('estoque:buscar_materiais_saida_excepcional')
 
 
 class TestNovaSaidaExcepcionalView:
-    def test_chefe_acessa_formulario(self, client, chefe_almoxarifado, estoque_principal):
+    def test_chefe_acessa_formulario(
+        self, client, chefe_almoxarifado, estoque_principal
+    ):
         client.force_login(chefe_almoxarifado)
         response = client.get(URL_NOVA)
         assert response.status_code == 200
