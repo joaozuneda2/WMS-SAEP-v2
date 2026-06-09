@@ -301,3 +301,62 @@ def preview_importacao_scpi_view(request):
             'nome_arquivo': arquivo.name,
         },
     )
+
+
+@login_required
+@require_http_methods(['POST'])
+def confirmar_importacao_scpi_view(request):
+    from apps.core.exceptions import ConflitoDominio, DadosInvalidos, PermissaoNegada
+    from apps.estoque.policies import exigir_pode_confirmar_importacao_scpi
+    from apps.estoque.services import confirmar_importacao_scpi
+
+    try:
+        exigir_pode_confirmar_importacao_scpi(request.user)
+    except PermissaoNegada as exc:
+        raise PermissionDenied(str(exc))
+
+    arquivo = request.FILES.get('arquivo')
+    if not arquivo:
+        return render(
+            request,
+            'estoque/confirmar_importacao_scpi.html',
+            {'erro': 'O arquivo é obrigatório.'},
+        )
+
+    estoque = Estoque.objects.filter(ativo=True).first()
+    if estoque is None:
+        return render(
+            request,
+            'estoque/confirmar_importacao_scpi.html',
+            {'erro': 'Não há estoque ativo configurado.'},
+        )
+
+    try:
+        conteudo = arquivo.read()
+        importacao = confirmar_importacao_scpi(
+            ator_id=request.user.id,
+            conteudo_bytes=conteudo,
+            arquivo_nome=arquivo.name,
+            estoque_id=estoque.pk,
+        )
+    except ConflitoDominio as exc:
+        return render(
+            request,
+            'estoque/confirmar_importacao_scpi.html',
+            {'erro': str(exc)},
+        )
+    except DadosInvalidos as exc:
+        return render(
+            request,
+            'estoque/confirmar_importacao_scpi.html',
+            {'erro': str(exc)},
+        )
+
+    return render(
+        request,
+        'estoque/confirmar_importacao_scpi.html',
+        {
+            'importacao': importacao,
+            'sucesso': True,
+        },
+    )

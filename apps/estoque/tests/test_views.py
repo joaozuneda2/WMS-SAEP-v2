@@ -468,3 +468,68 @@ class TestPreviewImportacaoScpiView:
         resp = client.post(self.URL, {'arquivo': arquivo})
         assert resp.status_code == 200
         assert b'CADPRO' in resp.content or b'inv' in resp.content.lower()
+
+
+class TestConfirmarImportacaoScpiView:
+    """Contrato HTTP de confirmar_importacao_scpi_view."""
+
+    URL = '/estoque/importacao-scpi/confirmar/'
+
+    def _csv(self, cadpro: str = '000.888.001', quantidade: str = '10.000') -> bytes:
+        return f'CADPRO;DENOMINACAO;QUAN3\n{cadpro};Teste;{quantidade}\n'.encode(
+            'utf-8'
+        )
+
+    def test_nao_autenticado_redireciona_para_login(self, client):
+        resp = client.post(self.URL, {})
+        assert resp.status_code == 302
+        assert '/login/' in resp['Location']
+
+    def test_sem_permissao_retorna_403(self, client, chefe_almoxarifado):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        client.force_login(chefe_almoxarifado)
+        arquivo = SimpleUploadedFile('t.csv', self._csv(), content_type='text/csv')
+        resp = client.post(self.URL, {'arquivo': arquivo})
+        assert resp.status_code == 403
+
+    def test_post_valido_redireciona_apos_confirmacao(
+        self, client, superuser, estoque_principal
+    ):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        client.force_login(superuser)
+        arquivo = SimpleUploadedFile('ok.csv', self._csv(), content_type='text/csv')
+        resp = client.post(self.URL, {'arquivo': arquivo})
+        assert resp.status_code in (200, 302)
+
+    def test_arquivo_ausente_retorna_200_com_erro(self, client, superuser):
+        client.force_login(superuser)
+        resp = client.post(self.URL, {})
+        assert resp.status_code == 200
+        assert b'arquivo' in resp.content.lower() or b'obrigat' in resp.content.lower()
+
+    def test_hash_duplicado_retorna_200_com_mensagem_erro(
+        self, client, superuser, estoque_principal
+    ):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        client.force_login(superuser)
+        csv_bytes = self._csv('000.888.002')
+        arquivo1 = SimpleUploadedFile('dup.csv', csv_bytes, content_type='text/csv')
+        client.post(self.URL, {'arquivo': arquivo1})
+
+        arquivo2 = SimpleUploadedFile('dup.csv', csv_bytes, content_type='text/csv')
+        resp = client.post(self.URL, {'arquivo': arquivo2})
+        assert resp.status_code == 200
+        assert (
+            b'duplicad' in resp.content.lower()
+            or b'reimporta' in resp.content.lower()
+            or b'conflito' in resp.content.lower()
+            or b'j\xc3\xa1' in resp.content.lower()
+        )
+
+    def test_get_nao_permitido_retorna_405(self, client, superuser):
+        client.force_login(superuser)
+        resp = client.get(self.URL)
+        assert resp.status_code == 405

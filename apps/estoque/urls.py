@@ -35,4 +35,9 @@ urlpatterns = [
         views.preview_importacao_scpi_view,
         name='preview_importacao_scpi',
     ),
+    path(
+        'importacao-scpi/confirmar/',
+        views.confirmar_importacao_scpi_view,
+        name='confirmar_importacao_scpi',
+    ),
 ]
