@@ -1,5 +1,5 @@
 {% with current=request.resolver_match.view_name %}
-  {% if pode_ver_fila_atendimento or pode_consultar_saidas_excepcionais %}
+  {% if pode_ver_fila_atendimento or pode_consultar_saidas_excepcionais or pode_visualizar_preview_scpi or pode_consultar_historico_scpi %}
   <nav class="app-bar__menu-section" aria-label="Almoxarifado">
     <p class="app-bar__menu-heading">Almoxarifado</p>
 
