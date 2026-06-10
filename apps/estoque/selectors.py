@@ -115,7 +115,11 @@ def _parse_linhas_csv_scpi(conteudo: str) -> list[dict]:
             code='csv_coluna_ausente',
         )
     col_qtd = colunas_quantidade[0]
-    col_den = next((f for f in reader.fieldnames if f.upper() == 'DENOMINACAO'), None)
+    _COLUNAS_NOME = ('DISC1', 'DENOMINACAO')
+    col_den = next(
+        (f for f in reader.fieldnames if f.upper() in _COLUNAS_NOME),
+        None,
+    )
     linhas = []
     for i, row in enumerate(reader, start=2):
         cadpro = (row.get('CADPRO') or '').strip()
