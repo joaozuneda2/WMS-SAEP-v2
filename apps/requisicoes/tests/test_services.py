@@ -1460,6 +1460,64 @@ def test_separar_para_retirada_idempotencia_bloqueia_segunda_execucao(
 
 
 # ---------------------------------------------------------------------------
+# TR-015B: separar_para_retirada — bloqueio por divergência/físico insuficiente
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_tr015b_bloqueia_por_divergencia_critica(
+    requisicao_autorizada, aux_almoxarifado, material_disponivel
+):
+    """TR-015B: divergência crítica pós-autorização bloqueia separação."""
+    from apps.estoque.models import SaldoEstoque
+
+    saldo = SaldoEstoque.objects.get(material=material_disponivel)
+    saldo.saldo_fisico = saldo.saldo_reservado - 1
+    saldo.save(update_fields=['saldo_fisico'])
+
+    with pytest.raises(DadosInvalidos) as excinfo:
+        separar_para_retirada(
+            ator_id=aux_almoxarifado.pk,
+            requisicao_id=requisicao_autorizada.pk,
+        )
+    assert excinfo.value.code == 'separacao_bloqueada'
+
+
+@pytest.mark.django_db
+def test_tr015b_bloqueia_por_fisico_insuficiente_sem_divergencia(
+    aux_almoxarifado, solicitante, setor_obras, material_disponivel
+):
+    """TR-015B: saldo_fisico < quantidade_autorizada mas sem divergência bloqueia separação."""
+    from apps.estoque.models import SaldoEstoque
+
+    # Constrói estado manual: autorizada com qty=10, saldo_fisico=5, saldo_reservado=4
+    req = Requisicao.objects.create(
+        estado=EstadoRequisicao.AUTORIZADA,
+        numero_publico='REQ-2026-TST-015B',
+        criador=solicitante,
+        beneficiario=solicitante,
+        setor_beneficiario=setor_obras,
+    )
+    ItemRequisicao.objects.create(
+        requisicao=req,
+        material=material_disponivel,
+        quantidade_solicitada=Decimal('10'),
+        quantidade_autorizada=Decimal('10'),
+    )
+    saldo = SaldoEstoque.objects.get(material=material_disponivel)
+    saldo.saldo_fisico = Decimal('5')
+    saldo.saldo_reservado = Decimal('4')
+    saldo.save(update_fields=['saldo_fisico', 'saldo_reservado'])
+
+    with pytest.raises(DadosInvalidos) as excinfo:
+        separar_para_retirada(
+            ator_id=aux_almoxarifado.pk,
+            requisicao_id=req.pk,
+        )
+    assert excinfo.value.code == 'separacao_bloqueada'
+
+
+# ---------------------------------------------------------------------------
 # TR-016 / TR-017 / TR-018: registrar_atendimento
 # ---------------------------------------------------------------------------
 

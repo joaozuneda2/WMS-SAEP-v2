@@ -19,7 +19,7 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.core.exceptions import DadosInvalidos, EstadoInvalido
-from apps.estoque.models import Material
+from apps.estoque.models import Material, SaldoEstoque
 from apps.estoque.services import (
     ItemAtendimentoSaldo,
     ItemLiberacaoReserva,
@@ -690,10 +690,13 @@ def separar_para_retirada(
     ator_id: int,
     requisicao_id: int,
 ) -> Requisicao:
-    """Separa para retirada uma requisição já autorizada (TR-015).
+    """Separa para retirada uma requisição já autorizada (TR-015/TR-015B).
 
     AUTORIZADA -> PRONTA_PARA_RETIRADA. Mantém o saldo reservado da
     autorização e não toca em saldo físico.
+
+    TR-015B: bloqueia se qualquer item autorizado tiver divergência crítica
+    (saldo_fisico < saldo_reservado) ou físico insuficiente para a operação.
     """
     try:
         ator = User.objects.get(pk=ator_id)
@@ -720,6 +723,34 @@ def separar_para_retirada(
             'Esta requisição não possui itens com quantidade autorizada.',
             code='itens_autorizados_insuficientes',
         )
+
+    itens_autorizados = list(
+        requisicao.itens.filter(quantidade_autorizada__gt=0)
+        .select_related('material')
+        .order_by('id')
+    )
+    material_ids = [item.material_id for item in itens_autorizados]
+    saldos_por_material = {
+        saldo.material_id: saldo
+        for saldo in SaldoEstoque.objects.select_for_update()
+        .filter(material_id__in=material_ids)
+        .order_by('estoque_id', 'material_id', 'id')
+    }
+    for item in itens_autorizados:
+        saldo = saldos_por_material.get(item.material_id)
+        if saldo is None:
+            raise DadosInvalidos(
+                f"Saldo de estoque não encontrado para '{item.material.nome}'.",
+                code='separacao_bloqueada',
+            )
+        if saldo.divergente or saldo.saldo_fisico < item.quantidade_autorizada:
+            raise DadosInvalidos(
+                f'Estoque insuficiente para separação do material '
+                f"'{item.material.nome}'. "
+                f'Corrija o estoque ou cancele a requisição via TR-013.',
+                code='separacao_bloqueada',
+            )
+
     verificar_transicao_valida(requisicao.estado, EstadoRequisicao.PRONTA_PARA_RETIRADA)
 
     requisicao.estado = EstadoRequisicao.PRONTA_PARA_RETIRADA
