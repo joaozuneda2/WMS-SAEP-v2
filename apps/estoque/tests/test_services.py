@@ -431,6 +431,7 @@ class TestConfirmarImportacaoScpiTimelineRequisicoes:
     """atualizacao_estoque_relevante registrado em requisições autorizadas afetadas."""
 
     def _csv(self, cadpro: str, denominacao: str, quantidade: str) -> bytes:
+        """Monta CSV SCPI mínimo com uma linha."""
         return (
             f'CADPRO;DENOMINACAO;QUAN3\n{cadpro};{denominacao};{quantidade}\n'.encode(
                 'utf-8'
@@ -445,6 +446,7 @@ class TestConfirmarImportacaoScpiTimelineRequisicoes:
         material_scpi_critico,
         requisicao_autorizada_critico,
     ):
+        """Happy path: material crítico + requisição autorizada → evento criado com metadata correto."""
         from apps.estoque.services import confirmar_importacao_scpi
         from apps.requisicoes.models import EventoTimeline, TimelineRequisicao
 

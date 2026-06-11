@@ -519,7 +519,9 @@ def _registrar_atualizacao_estoque_relevante(*, linhas, estoque, importacao, ato
             material_id__in=existing_material_ids,
             estoque=estoque,
             saldo_fisico__lt=F('saldo_reservado'),
-        ).only('material_id', 'saldo_fisico', 'saldo_reservado')
+        )
+        .select_for_update()
+        .only('material_id', 'saldo_fisico', 'saldo_reservado')
     }
     if not saldos_criticos:
         return
