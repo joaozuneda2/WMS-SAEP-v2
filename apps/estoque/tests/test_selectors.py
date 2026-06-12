@@ -381,8 +381,9 @@ class TestListarMateriaisComSaldo:
         from apps.estoque.selectors import listar_materiais_com_saldo
 
         resultado = listar_materiais_com_saldo(chefe_almoxarifado.pk, busca='MAT001')
-        assert resultado.count() == 1
-        assert resultado.first().material.codigo == 'MAT001'
+        assert set(resultado.values_list('material__pk', flat=True)) == {
+            material_disponivel.pk
+        }
 
     def test_busca_por_nome_filtra_resultado(
         self,
@@ -394,8 +395,9 @@ class TestListarMateriaisComSaldo:
         from apps.estoque.selectors import listar_materiais_com_saldo
 
         resultado = listar_materiais_com_saldo(chefe_almoxarifado.pk, busca='Tinta')
-        assert resultado.count() == 1
-        assert resultado.first().material == material_scpi_critico
+        assert set(resultado.values_list('material__pk', flat=True)) == {
+            material_scpi_critico.pk
+        }
 
     def test_busca_vazia_retorna_todos(
         self,
@@ -407,4 +409,7 @@ class TestListarMateriaisComSaldo:
         from apps.estoque.selectors import listar_materiais_com_saldo
 
         resultado = listar_materiais_com_saldo(chefe_almoxarifado.pk, busca='')
-        assert resultado.count() == 2
+        assert set(resultado.values_list('material__pk', flat=True)) == {
+            material_disponivel.pk,
+            material_scpi_critico.pk,
+        }
