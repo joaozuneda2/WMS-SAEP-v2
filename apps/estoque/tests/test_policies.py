@@ -203,3 +203,49 @@ class TestExigirPodeConsultarHistoricoScpi:
         from apps.estoque.policies import exigir_pode_consultar_historico_scpi
 
         exigir_pode_consultar_historico_scpi(chefe_almoxarifado)
+
+
+class TestPodeConsultarCatalogoEstoque:
+    def test_chefe_almoxarifado_pode(self, chefe_almoxarifado):
+        from apps.estoque.policies import pode_consultar_catalogo_estoque
+
+        assert pode_consultar_catalogo_estoque(chefe_almoxarifado) is True
+
+    def test_aux_almoxarifado_pode(self, aux_almoxarifado):
+        from apps.estoque.policies import pode_consultar_catalogo_estoque
+
+        assert pode_consultar_catalogo_estoque(aux_almoxarifado) is True
+
+    def test_superuser_pode(self, superuser):
+        from apps.estoque.policies import pode_consultar_catalogo_estoque
+
+        assert pode_consultar_catalogo_estoque(superuser) is True
+
+    def test_solicitante_nao_pode(self, solicitante):
+        from apps.estoque.policies import pode_consultar_catalogo_estoque
+
+        assert pode_consultar_catalogo_estoque(solicitante) is False
+
+    def test_inativo_nao_pode(self, usuario_inativo):
+        from apps.estoque.policies import pode_consultar_catalogo_estoque
+
+        assert pode_consultar_catalogo_estoque(usuario_inativo) is False
+
+
+class TestExigirPodeConsultarCatalogoEstoque:
+    def test_chefe_almoxarifado_nao_lanca(self, chefe_almoxarifado):
+        from apps.estoque.policies import exigir_pode_consultar_catalogo_estoque
+
+        exigir_pode_consultar_catalogo_estoque(chefe_almoxarifado)
+
+    def test_superuser_nao_lanca(self, superuser):
+        from apps.estoque.policies import exigir_pode_consultar_catalogo_estoque
+
+        exigir_pode_consultar_catalogo_estoque(superuser)
+
+    def test_solicitante_lanca_permissao_negada(self, solicitante):
+        from apps.estoque.policies import exigir_pode_consultar_catalogo_estoque
+        from apps.core.exceptions import PermissaoNegada
+
+        with pytest.raises(PermissaoNegada):
+            exigir_pode_consultar_catalogo_estoque(solicitante)
