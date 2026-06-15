@@ -2,13 +2,14 @@
   Fragment do corpo do modal de devolução (TR-020).
   Params: form, item, entregue_liquida, requisicao, id, erro
 {% endcomment %}
+{% load requisicoes_tags %}
 
 <div class="space-y-4">
   <p class="text-sm text-slate-700">
     Material: <span class="font-semibold">{{ item.material.nome }}</span><br>
     Entregue líquida disponível:
-    <span class="font-semibold tabular-nums">{{ entregue_liquida }}</span>
-    {{ item.material.unidade }}
+    <span class="font-semibold tabular-nums">{{ entregue_liquida|formatar_quantidade:item.material.unidade }}</span>
+    {{ item.material.get_unidade_display }}
   </p>
 
   <div>
@@ -22,6 +23,7 @@
       name="quantidade"
       step="0.001"
       min="0.001"
+      max="{{ entregue_liquida }}"
       value="{{ form.quantidade.value|default_if_none:'' }}"
       required
       aria-required="true"
