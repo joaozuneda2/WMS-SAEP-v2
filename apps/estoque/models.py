@@ -349,6 +349,25 @@ _TIPOS_ORIGEM_SAIDA = [
 ]
 
 
+class MovimentacaoEstoqueQuerySet(models.QuerySet):
+    """QuerySet que bloqueia mutações em lote para preservar o ledger append-only."""
+
+    def update(self, **kwargs):
+        raise MovimentacaoEstoqueImutavel(
+            'MovimentacaoEstoque não pode ser alterada em lote.'
+        )
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise MovimentacaoEstoqueImutavel(
+            'MovimentacaoEstoque não pode ser alterada em lote.'
+        )
+
+    def delete(self):
+        raise MovimentacaoEstoqueImutavel(
+            'MovimentacaoEstoque não pode ser excluída em lote.'
+        )
+
+
 class MovimentacaoEstoque(models.Model):
     """Ledger auditável de mutações de SaldoEstoque.
 
@@ -416,10 +435,22 @@ class MovimentacaoEstoque(models.Model):
     )
     criado_em = models.DateTimeField('criado em', auto_now_add=True)
 
+    objects = MovimentacaoEstoqueQuerySet.as_manager()
+
     class Meta:
         verbose_name = 'movimentação de estoque'
         verbose_name_plural = 'movimentações de estoque'
         ordering = ('criado_em',)
+        indexes = [
+            models.Index(
+                fields=['requisicao', 'material', 'tipo'],
+                name='idx_mov_req_mat_tipo',
+            ),
+            models.Index(
+                fields=['estoque', 'material'],
+                name='idx_mov_est_mat',
+            ),
+        ]
         constraints = [
             models.CheckConstraint(
                 name='movimentacao_exatamente_uma_origem',

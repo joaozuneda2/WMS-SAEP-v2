@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.db.models import Count, QuerySet
 
-from apps.estoque.models import SaidaExcepcional
+from apps.estoque.models import SaidaExcepcional, TipoMovimentacaoEstoque
 
 
 def listar_saidas_excepcionais(ator_id: int) -> QuerySet:
@@ -260,9 +260,9 @@ def listar_materiais_com_saldo(*, busca: str = ''):
 
 
 TIPOS_MOVIMENTO_ENTREGA_LIQUIDA = [
-    'consumo',
-    'devolucao',
-    'estorno_requisicao',
+    TipoMovimentacaoEstoque.CONSUMO,
+    TipoMovimentacaoEstoque.DEVOLUCAO,
+    TipoMovimentacaoEstoque.ESTORNO_REQUISICAO,
 ]
 
 

@@ -66,6 +66,27 @@ def _registrar_movimentacao(
     Deve ser chamado dentro da mesma transaction.atomic do service mutante,
     após o save() do SaldoEstoque afetado.
     """
+    _TIPOS_REQUISICAO = {
+        TipoMovimentacaoEstoque.RESERVA,
+        TipoMovimentacaoEstoque.LIBERACAO,
+        TipoMovimentacaoEstoque.CONSUMO,
+        TipoMovimentacaoEstoque.DEVOLUCAO,
+        TipoMovimentacaoEstoque.ESTORNO_REQUISICAO,
+    }
+    _TIPOS_SAIDA = {
+        TipoMovimentacaoEstoque.SAIDA_EXCEPCIONAL,
+        TipoMovimentacaoEstoque.ESTORNO_SAIDA,
+    }
+    if tipo in _TIPOS_REQUISICAO and origem.requisicao_id is None:
+        raise DadosInvalidos(
+            'Movimentação de tipo requisição exige origem de requisição.',
+            code='origem_movimentacao_incoerente',
+        )
+    if tipo in _TIPOS_SAIDA and origem.saida_excepcional_id is None:
+        raise DadosInvalidos(
+            'Movimentação de tipo saída exige origem de saída excepcional.',
+            code='origem_movimentacao_incoerente',
+        )
     MovimentacaoEstoque.objects.create(
         tipo=tipo,
         material_id=material_id,
