@@ -250,23 +250,24 @@ def _seed_sequencia_requisicao():
 
 
 def _seed_notificacoes_exemplo(usuarios):
+    # requisicao_id=None: seed_dev não cria Requisicao (proibido pela convenção).
     notificacoes_canonicas = [
         {
             'destinatario': usuarios['OBRAS001'],
             'tipo': TipoNotificacao.AUTORIZACAO,
-            'requisicao_id': 1,
+            'requisicao_id': None,
             'lida': False,
         },
         {
             'destinatario': usuarios['OBRAS001'],
             'tipo': TipoNotificacao.ATENDIMENTO,
-            'requisicao_id': 2,
+            'requisicao_id': None,
             'lida': True,
         },
         {
             'destinatario': usuarios['OBRAS002'],
             'tipo': TipoNotificacao.RECUSA,
-            'requisicao_id': 3,
+            'requisicao_id': None,
             'lida': False,
         },
     ]
