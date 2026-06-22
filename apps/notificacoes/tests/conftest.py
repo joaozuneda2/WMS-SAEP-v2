@@ -68,6 +68,15 @@ def chefe_almoxarifado(db, setor_almoxarifado):
 
 
 @pytest.fixture
+def superuser(db):
+    return User.objects.create_superuser(
+        matricula='999',
+        nome='Admin',
+        password='senha',
+    )
+
+
+@pytest.fixture
 def estoque_principal(db):
     return Estoque.objects.create(nome='Principal', codigo='ESTQ-001')
 
@@ -75,7 +84,7 @@ def estoque_principal(db):
 @pytest.fixture
 def material_disponivel(db, estoque_principal):
     m = Material.objects.create(
-        codigo='MAT001',
+        codigo='000.000.001',
         nome='Parafuso M6',
         unidade=UnidadeMedida.UNIDADE,
         ativo=True,

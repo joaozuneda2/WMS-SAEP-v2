@@ -192,37 +192,71 @@ def test_rollback_sem_notificacoes(solicitante, material_disponivel):
 # ---------------------------------------------------------------------------
 
 
+def _criar_material_critico(estoque):
+    """Material com saldo_fisico < saldo_reservado (divergência pré-existente)."""
+    from apps.estoque.models import Material, SaldoEstoque, UnidadeMedida
+
+    m = Material.objects.create(
+        codigo='000.001.001',
+        nome='Material Crítico Teste',
+        unidade=UnidadeMedida.UNIDADE,
+        ativo=True,
+    )
+    SaldoEstoque.objects.create(
+        estoque=estoque,
+        material=m,
+        saldo_fisico=2,
+        saldo_reservado=5,
+    )
+    return m
+
+
+def _criar_requisicao_autorizada(criador, beneficiario, setor, material):
+    """Requisição em estado AUTORIZADA com item do material dado."""
+    from decimal import Decimal
+
+    from apps.requisicoes.models import EstadoRequisicao, ItemRequisicao, Requisicao
+
+    req = Requisicao.objects.create(
+        estado=EstadoRequisicao.AUTORIZADA,
+        numero_publico='REQ-2099-000001',
+        criador=criador,
+        beneficiario=beneficiario,
+        setor_beneficiario=setor,
+    )
+    ItemRequisicao.objects.create(
+        requisicao=req,
+        material=material,
+        quantidade_solicitada=Decimal('3'),
+        quantidade_autorizada=Decimal('3'),
+    )
+    return req
+
+
 @pytest.mark.django_db(transaction=True)
 def test_divergencia_estoque_gera_notificacoes_para_requisicao_afetada(
-    chefe_obras, chefe_almoxarifado, outro_solicitante,
-    material_disponivel, estoque_principal
+    chefe_obras, superuser, setor_obras, outro_solicitante, estoque_principal
 ):
     """Importação SCPI com divergência crítica → notifica criador e beneficiário."""
-    from apps.estoque.services import confirmar_importacao_scpi, preview_importacao_scpi
-    from apps.requisicoes.services import (
-        autorizar_requisicao,
-        criar_requisicao,
-        enviar_para_autorizacao,
+    from apps.estoque.services import confirmar_importacao_scpi
+
+    material = _criar_material_critico(estoque_principal)
+    req = _criar_requisicao_autorizada(
+        criador=chefe_obras,
+        beneficiario=outro_solicitante,
+        setor=setor_obras,
+        material=material,
     )
 
-    req = criar_requisicao(
-        ator_id=chefe_obras.pk,
-        beneficiario_id=outro_solicitante.pk,
-        itens=[{'material_id': material_disponivel.pk, 'quantidade_solicitada': Decimal('50')}],
-    )
-    enviar_para_autorizacao(ator_id=chefe_obras.pk, requisicao_id=req.pk)
-    autorizar_requisicao(ator_id=chefe_obras.pk, requisicao_id=req.pk)
-
-    # Importar com fisico=10 → saldo_reservado=50 > fisico=10 → divergência crítica
-    csv_content = f'CADPRO;DENOMINACAO;QUAN3\n{material_disponivel.codigo};Parafuso M6;000.000.010'
-    preview = preview_importacao_scpi(
-        ator_id=chefe_almoxarifado.pk,
-        conteudo_csv=csv_content,
-        estoque_id=estoque_principal.pk,
-    )
+    csv_bytes = (
+        f'CADPRO;DENOMINACAO;QUAN3\n'
+        f'{material.codigo};Material Critico;001.000\n'
+    ).encode('utf-8')
     confirmar_importacao_scpi(
-        ator_id=chefe_almoxarifado.pk,
-        preview_id=preview.pk,
+        ator_id=superuser.pk,
+        conteudo_bytes=csv_bytes,
+        arquivo_nome='import_critico.csv',
+        estoque_id=estoque_principal.pk,
     )
 
     notifs = Notificacao.objects.filter(
@@ -236,34 +270,31 @@ def test_divergencia_estoque_gera_notificacoes_para_requisicao_afetada(
 
 @pytest.mark.django_db(transaction=True)
 def test_divergencia_estoque_deduplica_criador_igual_beneficiario(
-    chefe_obras, chefe_almoxarifado, solicitante,
-    material_disponivel, estoque_principal
+    chefe_obras, superuser, setor_obras, solicitante, estoque_principal
 ):
     """Divergência com criador == beneficiário → 1 notificação."""
-    from apps.estoque.services import confirmar_importacao_scpi, preview_importacao_scpi
-    from apps.requisicoes.services import (
-        autorizar_requisicao,
-        criar_requisicao,
-        enviar_para_autorizacao,
+    from apps.estoque.services import confirmar_importacao_scpi
+
+    material = _criar_material_critico(estoque_principal)
+    # força codigo único para não colidir com outro teste
+    material.codigo = '000.001.002'
+    material.save(update_fields=['codigo'])
+    req = _criar_requisicao_autorizada(
+        criador=solicitante,
+        beneficiario=solicitante,
+        setor=setor_obras,
+        material=material,
     )
 
-    req = criar_requisicao(
-        ator_id=solicitante.pk,
-        beneficiario_id=solicitante.pk,
-        itens=[{'material_id': material_disponivel.pk, 'quantidade_solicitada': Decimal('50')}],
-    )
-    enviar_para_autorizacao(ator_id=solicitante.pk, requisicao_id=req.pk)
-    autorizar_requisicao(ator_id=chefe_obras.pk, requisicao_id=req.pk)
-
-    csv_content = f'CADPRO;DENOMINACAO;QUAN3\n{material_disponivel.codigo};Parafuso M6;000.000.010'
-    preview = preview_importacao_scpi(
-        ator_id=chefe_almoxarifado.pk,
-        conteudo_csv=csv_content,
-        estoque_id=estoque_principal.pk,
-    )
+    csv_bytes = (
+        f'CADPRO;DENOMINACAO;QUAN3\n'
+        f'{material.codigo};Material Critico 2;001.000\n'
+    ).encode('utf-8')
     confirmar_importacao_scpi(
-        ator_id=chefe_almoxarifado.pk,
-        preview_id=preview.pk,
+        ator_id=superuser.pk,
+        conteudo_bytes=csv_bytes,
+        arquivo_nome='import_dedup.csv',
+        estoque_id=estoque_principal.pk,
     )
 
     notifs = Notificacao.objects.filter(

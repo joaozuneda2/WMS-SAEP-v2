@@ -708,6 +708,27 @@ def _registrar_atualizacao_estoque_relevante(*, linhas, estoque, importacao, ato
         ]
     )
 
+    from django.db import transaction as _tx
+
+    from apps.notificacoes.models import TipoNotificacao as _Tipo
+    from apps.notificacoes.services import criar_notificacoes_para as _criar
+
+    _snapshot = [
+        (req.pk, req.criador_id, req.beneficiario_id)
+        for req in req_por_id.values()
+    ]
+
+    def _notificar_divergencia():
+        for req_pk, criador_id, beneficiario_id in _snapshot:
+            _criar(
+                criador_id=criador_id,
+                beneficiario_id=beneficiario_id,
+                requisicao_id=req_pk,
+                tipo=_Tipo.DIVERGENCIA_ESTOQUE,
+            )
+
+    _tx.on_commit(_notificar_divergencia)
+
 
 def confirmar_importacao_scpi(
     *,
