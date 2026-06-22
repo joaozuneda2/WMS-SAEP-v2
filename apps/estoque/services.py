@@ -14,8 +14,6 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.core.exceptions import ConflitoDominio, DadosInvalidos
-
-logger = logging.getLogger(__name__)
 from apps.estoque.models import (
     Estoque,
     ItemSaidaExcepcional,
@@ -25,6 +23,8 @@ from apps.estoque.models import (
     SequenciaSaidaExcepcional,
     TipoMovimentacaoEstoque,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)

@@ -93,7 +93,7 @@ transaction.on_commit(
 
 Helper `criar_notificacoes_para(requisicao, tipo)` deduplica `criador` e `beneficiario` (mesmo usuário → uma notificação só) via `bulk_create` com lista deduplicada por `destinatario_id`.
 
-Para `_registrar_atualizacao_estoque_relevante`: `transaction.on_commit` após o `TimelineRequisicao.objects.bulk_create`, passando snapshot dos `req_por_id.values()` capturado antes do commit (lambda não deve capturar variáveis mutáveis).
+Para `_registrar_atualizacao_estoque_relevante`: `transaction.on_commit` após o `TimelineRequisicao.objects.bulk_create`, passando snapshot dos `req_por_id.values()` capturado antes do commit como `list(...)` — `dict.values()` retorna uma view dinâmica; materializar com `list()` garante snapshot imutável independente de alterações posteriores ao dict.
 
 ---
 

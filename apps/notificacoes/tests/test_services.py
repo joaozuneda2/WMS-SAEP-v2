@@ -202,13 +202,23 @@ def test_autorizar_requisicao_criador_igual_beneficiario_uma_notificacao(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_rollback_sem_notificacoes(solicitante, material_disponivel):
-    """Se transação rolar back, on_commit não dispara → zero notificações."""
-    from apps.core.exceptions import DadosInvalidos
-    from apps.requisicoes.services import autorizar_requisicao
+def test_on_commit_nao_dispara_em_rollback(solicitante, outro_solicitante):
+    """on_commit registrado dentro de atomic que faz rollback não persiste notificações."""
+    from django.db import transaction
 
-    with pytest.raises(DadosInvalidos):
-        autorizar_requisicao(ator_id=solicitante.pk, requisicao_id=99999)
+    from apps.notificacoes.services import criar_notificacoes_para
+
+    with pytest.raises(RuntimeError):
+        with transaction.atomic():
+            transaction.on_commit(
+                lambda: criar_notificacoes_para(
+                    criador_id=solicitante.pk,
+                    beneficiario_id=outro_solicitante.pk,
+                    requisicao_id=999,
+                    tipo=TipoNotificacao.AUTORIZACAO,
+                )
+            )
+            raise RuntimeError('forçar rollback')
 
     assert Notificacao.objects.count() == 0
 
