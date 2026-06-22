@@ -1,6 +1,6 @@
 """Services de notificações in-app."""
 
-from apps.notificacoes.models import Notificacao, TipoNotificacao
+from apps.notificacoes.models import Notificacao
 
 
 def criar_notificacoes_para(
@@ -11,9 +11,7 @@ def criar_notificacoes_para(
     tipo: str,
 ) -> None:
     """Cria notificações para criador e beneficiário, deduplicando se iguais."""
-    destinatarios = list(
-        dict.fromkeys(uid for uid in [criador_id, beneficiario_id])
-    )
+    destinatarios = list(dict.fromkeys(uid for uid in [criador_id, beneficiario_id]))
     Notificacao.objects.bulk_create(
         [
             Notificacao(
