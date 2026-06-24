@@ -90,7 +90,9 @@ inativo → False; solicitante puro sem setor chefiado/aux → False.
 
 View (`test_views.py`):
 - 200 para ator com visibilidade; queryset escopado no contexto.
-- 403 (`PermissionDenied`) para quem não pode consultar (ex.: solicitante puro).
+- 403 para quem não pode consultar, com a view mapeando explicitamente
+  `apps.core.exceptions.PermissaoNegada` para `PermissionDenied` — mesmo contrato
+  de `listar_saidas_excepcionais_view` (ex.: solicitante puro).
 - paginação: com N > page_size, 1ª página tem page_size itens, `?page=2` avança.
 - empty state quando ledger visível vazio.
 - menu: item "Movimentações" presente para almox/superuser, ausente p/ solicitante.
