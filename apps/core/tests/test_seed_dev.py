@@ -36,10 +36,9 @@ def test_seed_dev_cria_elenco_canonico_e_converge(settings, monkeypatch):
 
     call_command('seed_dev')
 
+    ano_atual = timezone.localdate().year
     Material.objects.filter(codigo='MAT-001').update(nome='Papel alterado')
-    SequenciaRequisicao.objects.filter(
-        ano=timezone.localdate().year,
-    ).update(ultimo_numero=7)
+    SequenciaRequisicao.objects.filter(ano=ano_atual).update(ultimo_numero=7)
 
     call_command('seed_dev')
 
@@ -78,7 +77,7 @@ def test_seed_dev_cria_elenco_canonico_e_converge(settings, monkeypatch):
         material__codigo='MAT-003',
     ).saldo_reservado == Decimal('0.000')
 
-    sequencia = SequenciaRequisicao.objects.get(ano=timezone.localdate().year)
+    sequencia = SequenciaRequisicao.objects.get(ano=ano_atual)
     assert sequencia.ultimo_numero == 7
 
     usuario = authenticate(username='ALMOX001', password='senha@dev')

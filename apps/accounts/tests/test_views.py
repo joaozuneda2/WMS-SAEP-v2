@@ -1,6 +1,7 @@
 """Testes HTTP de MatriculaLoginView — comportamentos de view não cobertos em test_login.py."""
 
 import pytest
+from django.conf import settings
 from django.urls import reverse
 
 from apps.accounts.models import User
@@ -33,6 +34,7 @@ def test_usuario_autenticado_redirecionado_ao_acessar_login(client, usuario):
     client.force_login(usuario)
     resposta = client.get(reverse('accounts:login'))
     assert resposta.status_code == 302
+    assert resposta.headers['Location'] != reverse('accounts:login')
 
 
 @pytest.mark.django_db
@@ -42,6 +44,8 @@ def test_login_post_valido_redireciona(client, usuario):
         {'username': 'OP-002', 'password': SENHA},
     )
     assert resposta.status_code == 302
+    assert resposta.headers['Location'] == settings.LOGIN_REDIRECT_URL
+    assert str(usuario.pk) == client.session.get('_auth_user_id')
 
 
 @pytest.mark.django_db
