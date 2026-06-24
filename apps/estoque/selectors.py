@@ -424,3 +424,19 @@ def filtrar_movimentacoes(
         qs = qs.filter(requisicao__setor_beneficiario_id=setor)
 
     return qs
+
+
+def pode_filtrar_movimentacoes_por_setor(ator_id: int) -> bool:
+    """True se o ator pode filtrar o ledger por setor (somente almoxarifado).
+
+    Chefe/auxiliar de setor já está escopado ao próprio setor pelo RBAC, então
+    o filtro de setor não se aplica a ele. Superuser e almoxarifado veem todos
+    os setores e podem recortar por setor beneficiário.
+    """
+    try:
+        ator = User.objects.get(pk=ator_id)
+    except User.DoesNotExist:
+        return False
+    if not ator.is_active:
+        return False
+    return ator.is_superuser or _eh_almoxarifado(ator)
