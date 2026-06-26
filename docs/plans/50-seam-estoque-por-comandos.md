@@ -8,8 +8,8 @@
 - `entregue_liquida_por_item` renomeado para `entregue_liquida_por_material` com assinatura `(*, requisicao_id, material_id)` — remove importação reversa de `requisicoes.models`
 - `_registrar_atualizacao_estoque_relevante` movida de `estoque/services.py` para `requisicoes/services/ciclo_vida.py` como `registrar_timeline_divergencia_importacao` — remove a segunda importação reversa
 - `requisicoes/services/atendimento.py` e `ciclo_vida.py` migrados para os novos comandos; removem `SaldoEstoque`, `TipoMovimentacaoEstoque` e `_registrar_movimentacao` diretos
-- `confirmar_importacao_scpi` retorna `(importacao, linhas)` para o VIEW coordenar o hook de timeline
-- VIEW `confirmar_importacao_scpi_view` passa a ser `@transaction.atomic`, chama ambos os serviços
+- `confirmar_importacao_scpi` aceita `_pos_importacao_hook` (callable opcional, interno) e continua retornando apenas `ImportacaoSCPI` — linhas ficam encapsuladas no serviço
+- VIEW `confirmar_importacao_scpi_view` passa `registrar_timeline_divergencia_importacao` como hook; não depende do retorno de linhas
 
 **O que NÃO muda:**
 - `OrigemMovimentacaoEstoque` permanece em `estoque/services.py`
@@ -39,7 +39,7 @@
 |---------|----------------|
 | `apps/estoque/types.py` | CRIAR — TypedDicts do seam |
 | `apps/estoque/selectors.py` | MODIFICAR — renomear `entregue_liquida_por_item` → `entregue_liquida_por_material`; remover `ItemRequisicao` import |
-| `apps/estoque/services.py` | MODIFICAR — add `registrar_devolucao_estoque`, `estornar_requisicao_estoque`; remover `_registrar_atualizacao_estoque_relevante`; mudar return de `confirmar_importacao_scpi` para `(importacao, linhas)` |
+| `apps/estoque/services.py` | MODIFICAR — add `registrar_devolucao_estoque`, `estornar_requisicao_estoque`; remover `_registrar_atualizacao_estoque_relevante`; add parâmetro `_pos_importacao_hook` em `confirmar_importacao_scpi` (retorno permanece `ImportacaoSCPI`) |
 | `apps/estoque/tests/test_selectors.py` | MODIFICAR — atualizar chamadas `entregue_liquida_por_item` → `entregue_liquida_por_material(material_id=...)` |
 | `apps/estoque/tests/test_services.py` | MODIFICAR — unpack `(importacao, linhas)` no retorno de `confirmar_importacao_scpi`; add testes dos novos comandos |
 | `apps/requisicoes/services/atendimento.py` | MODIFICAR — `registrar_devolucao` usa `registrar_devolucao_estoque`; resolve `item.material_id` antes de chamar |
@@ -47,8 +47,8 @@
 | `apps/requisicoes/views.py` | MODIFICAR — `entregue_liquida_por_material(material_id=item.material_id)` |
 | `apps/requisicoes/tests/test_services.py` | MODIFICAR — atualizar chamadas do seletor renomeado |
 | `apps/estoque/tests/test_selectors.py` | MODIFICAR — atualizar assinatura |
-| `apps/notificacoes/tests/test_services.py` | MODIFICAR — unpack `(importacao, linhas)` |
-| `apps/estoque/views.py` | MODIFICAR — `@transaction.atomic`; unpack `(importacao, linhas)`; chamar `registrar_timeline_divergencia_importacao` |
+| `apps/notificacoes/tests/test_services.py` | SEM mudança no retorno — `confirmar_importacao_scpi` continua retornando `ImportacaoSCPI` |
+| `apps/estoque/views.py` | MODIFICAR — passa `_pos_importacao_hook=registrar_timeline_divergencia_importacao`; sem unpack de tuple |
 
 ## Novos comandos de estoque
 
@@ -67,16 +67,17 @@ def registrar_devolucao_estoque(
 
 **Responsabilidade:** lock de `SaldoEstoque`, validação de material ativo e saldo único, validação `quantidade <= entregue_liquida`, incremento de `saldo_fisico`, emissão de `MovimentacaoEstoque(DEVOLUCAO)`.
 
-**Pré-condições do chamador:** Requisicao já travada (`select_for_update`); `ator_id` e `item` já validados.
+**Pré-condições do chamador:** Requisicao já travada (`select_for_update`); `ator_id` e `item` já validados. O lock da Requisicao é o mutex que impede inserções concorrentes em `MovimentacaoEstoque` para esse `(requisicao_id, material_id)` — conforme ADR-0005, toda mutação de saldo via requisição exige o lock da requisição antes.
 
-**Fluxo interno:**
-1. Lock `SaldoEstoque` para `material_id` em ordem `(estoque_id, material_id, id)`
-2. Validar saldo existe e não é ambíguo (`ConflitoDominio`)
-3. Validar `material.ativo` (`ConflitoDominio`)
-4. Computar `entregue_liquida = entregue_liquida_por_material(requisicao_id, material_id)`
-5. Validar `quantidade > 0` e `quantidade <= entregue_liquida` (`DadosInvalidos` / `ConflitoDominio`)
-6. `saldo.saldo_fisico += quantidade; saldo.save(update_fields=['saldo_fisico'])`
-7. `_registrar_movimentacao(DEVOLUCAO, origem=OrigemMovimentacaoEstoque(requisicao_id=requisicao_id), ...)`
+**Fluxo interno (todos os passos dentro de `@transaction.atomic`):**
+1. Validar `quantidade > 0` (`DadosInvalidos`) — fail-fast antes de qualquer lock
+2. Lock `SaldoEstoque` para `material_id` em ordem `(estoque_id, material_id, id)` via `select_for_update`
+3. Validar saldo existe e não é ambíguo (`ConflitoDominio`)
+4. Validar `material.ativo` (`ConflitoDominio`)
+5. Computar `entregue_liquida = entregue_liquida_por_material(requisicao_id, material_id)` — **dentro do lock do SaldoEstoque e da mesma transação**; seguro porque o lock da Requisicao (pré-condição) já bloqueia qualquer nova movimentação para esse par
+6. Validar `quantidade <= entregue_liquida` (`ConflitoDominio`)
+7. `saldo.saldo_fisico += quantidade; saldo.save(update_fields=['saldo_fisico'])`
+8. `_registrar_movimentacao(DEVOLUCAO, origem=OrigemMovimentacaoEstoque(requisicao_id=requisicao_id), ...)`
 
 ### `estornar_requisicao_estoque`
 
@@ -92,15 +93,16 @@ def estornar_requisicao_estoque(
 
 **Responsabilidade:** para cada material com `entregue_liquida > 0`, restaura `saldo_fisico` e emite `MovimentacaoEstoque(ESTORNO_REQUISICAO)`. Levanta `ConflitoDominio` se nenhum material tem entregue líquida > 0.
 
-**Pré-condições do chamador:** Requisicao já travada; `ator_id` validado; `material_ids` extraídos dos itens da requisicao.
+**Pré-condições do chamador:** Requisicao já travada (`select_for_update`); `ator_id` validado; `material_ids` extraídos dos itens da requisicao. O lock da Requisicao (ADR-0005) garante que nenhuma nova movimentação será inserida para esses materiais/requisicao durante a operação.
 
-**Fluxo interno:**
-1. Computar `entregue_liquida_por_material` para cada `material_id` (leitura ledger, sem lock)
-2. Filtrar `itens_com_liquida = [(mid, liq) for ... if liq > 0]`
-3. Se `itens_com_liquida` vazio → `ConflitoDominio('Não há entregue líquida a estornar.', code='sem_liquida_para_estorno')`
-4. Lock `SaldoEstoque` para os `material_ids` com liquida > 0, ordem `(estoque_id, material_id, id)`
-5. Para cada: validar saldo único; `saldo.saldo_fisico += liquida; saldo.save(...)`
-6. `_registrar_movimentacao(ESTORNO_REQUISICAO, origem=..., ...)`
+**Fluxo interno (todos os passos dentro de `@transaction.atomic`):**
+1. Lock `SaldoEstoque` para todos os `material_ids`, em ordem determinística `(estoque_id, material_id, id)` via `select_for_update`
+2. Para cada: validar saldo existe e não é ambíguo (`ConflitoDominio`)
+3. Computar `entregue_liquida_por_material(requisicao_id, material_id)` para cada material — **dentro do lock**, consistente porque a Requisicao está travada
+4. Filtrar `itens_com_liquida = [(mid, liq) for ... if liq > 0]`
+5. Se `itens_com_liquida` vazio → `ConflitoDominio('Não há entregue líquida a estornar.', code='sem_liquida_para_estorno')`
+6. Para cada item com liquida > 0: `saldo.saldo_fisico += liquida; saldo.save(update_fields=['saldo_fisico'])`
+7. `_registrar_movimentacao(ESTORNO_REQUISICAO, origem=OrigemMovimentacaoEstoque(requisicao_id=requisicao_id), ...)` por material
 
 ### Mudança de assinatura: `entregue_liquida_por_material`
 
@@ -126,11 +128,38 @@ O seletor deixa de importar `ItemRequisicao`. A referência por `material_id` é
 
 Movida para `apps/requisicoes/services/ciclo_vida.py` (ou novo `apps/requisicoes/services/hooks_estoque.py`). Mantém a mesma lógica: encontra requisições AUTORIZADAS afetadas por divergência crítica de saldo e cria `TimelineRequisicao`.
 
-`confirmar_importacao_scpi` passa a retornar `tuple[ImportacaoSCPI, list]` — `(importacao, linhas)` — e não chama mais o hook internamente.
+**`confirmar_importacao_scpi` permanece retornando apenas `ImportacaoSCPI`** (sem tuple — não vaza `linhas` para os callers). Aceita parâmetro interno `_pos_importacao_hook: Callable | None = None` que, se fornecido, é chamado dentro da mesma `transaction.atomic` com `(linhas, estoque, importacao, ator)`.
 
-`confirmar_importacao_scpi_view` em `apps/estoque/views.py` adiciona `@transaction.atomic`, faz unpack, chama `registrar_timeline_divergencia_importacao(linhas=linhas, estoque=estoque, importacao=importacao, ator=ator)`. O VIEW pode importar de `requisicoes` (é a camada de adaptação — ADR-0004).
+```python
+def confirmar_importacao_scpi(
+    *,
+    ator_id: int,
+    conteudo_bytes: bytes,
+    arquivo_nome: str,
+    estoque_id: int,
+    _pos_importacao_hook=None,  # Callable[[linhas, estoque, importacao, ator], None] | None
+) -> ImportacaoSCPI:
+    ...
+    with transaction.atomic():
+        ...
+        importacao = ImportacaoSCPI.objects.create(...)
+        if _pos_importacao_hook is not None:
+            _pos_importacao_hook(linhas=linhas, estoque=estoque, importacao=importacao, ator=ator)
+    return importacao
+```
 
-As views podem coordenar entre domínios; services não cruzam dependências.
+`confirmar_importacao_scpi_view` em `apps/estoque/views.py` importa e passa o hook:
+
+```python
+from apps.requisicoes.services import registrar_timeline_divergencia_importacao
+
+importacao = confirmar_importacao_scpi(
+    ...,
+    _pos_importacao_hook=registrar_timeline_divergencia_importacao,
+)
+```
+
+O VIEW pode importar de `requisicoes` (camada de adaptação — ADR-0004). `estoque/services.py` continua sem importar `requisicoes`. Testes de `confirmar_importacao_scpi` sem VIEW **não precisam mudar** — o hook é opcional e ausente por padrão.
 
 ## `apps/estoque/types.py`
 
@@ -179,7 +208,7 @@ Mesmos cenários existentes dos testes de `entregue_liquida_por_item` em `test_s
 
 - `registrar_devolucao` em `atendimento.py` — comportamento externo inalterado
 - `estornar_requisicao` em `ciclo_vida.py` — comportamento externo inalterado
-- `confirmar_importacao_scpi` — retorno tuple; hook de timeline via VIEW
+- `confirmar_importacao_scpi` — retorno `ImportacaoSCPI` inalterado; hook de timeline via `_pos_importacao_hook` passado pelo VIEW
 
 ### Permissões / estado inválido
 
@@ -193,8 +222,8 @@ Cobertura existente mantida. Não há mudança de policy ou transição de estad
 
 ## Risks
 
-**Atomicidade da VIEW:** `confirmar_importacao_scpi_view` precisa de `@transaction.atomic` para que timeline e saldos commits juntos. `confirmar_importacao_scpi` já usa `with transaction.atomic()` internamente — o decorator externo cria savepoint, o comportamento de on_commit segue o outer commit.
+**Atomicidade do hook:** O `_pos_importacao_hook` é chamado dentro de `with transaction.atomic():` em `confirmar_importacao_scpi`. A VIEW não precisa de `@transaction.atomic` extra — o hook já participa da mesma transação do serviço.
+
+**Segurança do `entregue_liquida` dentro do lock (ADR-0005):** `registrar_devolucao_estoque` e `estornar_requisicao_estoque` computam `entregue_liquida_por_material` DEPOIS de adquirir o lock de `SaldoEstoque` e dentro de `@transaction.atomic`. A consistência é garantida porque toda movimentação de estoque vinculada a uma requisição exige o lock da Requisicao — pré-condição fornecida pelo chamador. Portanto, nenhuma nova entrada pode ser inserida em `MovimentacaoEstoque` para esse `(requisicao_id, material_id)` enquanto o lock da Requisicao é mantido.
 
 **Renomeação de `entregue_liquida_por_item`:** função referenciada em 3 services + 2 views + ~15 testes. Renomeação mecânica sem risco lógico — verificar por `grep 'entregue_liquida_por_item'` pós-migração.
-
-**Retorno de `confirmar_importacao_scpi`:** chamado em ~15 testes. Callers que ignoravam o retorno (`importacao = confirmar_importacao_scpi(...)`) precisam fazer unpack. Os que salvavam só `importacao` ficam `importacao, _ = confirmar_importacao_scpi(...)` ou `importacao, linhas = ...`.
