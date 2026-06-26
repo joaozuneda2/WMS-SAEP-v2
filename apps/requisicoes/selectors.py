@@ -7,7 +7,8 @@ Leituras triviais podem usar o ORM direto na view.
 
 from django.db.models import Count, F, OuterRef, Q, QuerySet, Subquery
 
-from apps.accounts.models import SetorClassificacao, User, VinculoAuxiliar
+from apps.accounts.models import User
+from apps.accounts.papeis import papel_efetivo
 from apps.estoque.models import Material
 from apps.requisicoes.models import (
     EstadoRequisicao,
@@ -35,31 +36,9 @@ def materiais_para_requisicao(q: str = '', limite: int = 20) -> QuerySet:
     return qs.order_by('nome')[:limite]
 
 
-def _setores_chefiados_nao_almox(ator: User) -> list[int]:
-    """IDs dos setores não-almoxarifado chefiados pelo ator."""
-    try:
-        setor = ator.setor_chefiado
-    except Exception:
-        return []
-    if not setor.ativo or setor.classificacao == SetorClassificacao.ALMOXARIFADO:
-        return []
-    return [setor.pk]
-
-
 def _eh_almoxarifado(ator: User) -> bool:
     """True se o ator tem papel ativo de chefe ou auxiliar de almoxarifado."""
-    try:
-        setor = ator.setor_chefiado
-        if setor.ativo and setor.classificacao == SetorClassificacao.ALMOXARIFADO:
-            return True
-    except Exception:
-        pass
-    return VinculoAuxiliar.objects.filter(
-        usuario=ator,
-        ativo=True,
-        setor__ativo=True,
-        setor__classificacao=SetorClassificacao.ALMOXARIFADO,
-    ).exists()
+    return papel_efetivo(ator).eh_almoxarifado
 
 
 def requisicoes_visiveis_para(ator_id: int) -> QuerySet[Requisicao]:
@@ -90,11 +69,11 @@ def requisicoes_visiveis_para(ator_id: int) -> QuerySet[Requisicao]:
     nao_rascunho = ~Q(estado=EstadoRequisicao.RASCUNHO)
     filtro = Q(criador_id=ator.pk) | (Q(beneficiario_id=ator.pk) & nao_rascunho)
 
-    setores_chefiados = _setores_chefiados_nao_almox(ator)
-    if setores_chefiados:
-        filtro |= Q(setor_beneficiario_id__in=setores_chefiados) & nao_rascunho
+    papel = papel_efetivo(ator)
+    if papel.setor_chefiado_ativo_id is not None and not papel.eh_chefe_de_almoxarifado:
+        filtro |= Q(setor_beneficiario_id=papel.setor_chefiado_ativo_id) & nao_rascunho
 
-    if _eh_almoxarifado(ator):
+    if papel.eh_almoxarifado:
         filtro |= nao_rascunho
 
     return base_qs.filter(filtro).distinct()
