@@ -92,16 +92,10 @@ def cancelar_ou_descartar_requisicao(
         )
         return None
 
-    justificativa_cancelamento = (
-        ''
-        if requisicao.estado == EstadoRequisicao.AGUARDANDO_AUTORIZACAO
-        else justificativa or ''
-    )
-
     return _cancelar_requisicao_impl(
         requisicao=requisicao,
         ator_id=ator_id,
-        justificativa=justificativa_cancelamento,
+        justificativa=justificativa or '',
     )
 
 
@@ -148,7 +142,7 @@ def _cancelar_requisicao_impl(
             evento=EventoTimeline.CANCELAMENTO,
             ator=ator,
             estado_resultante=EstadoRequisicao.CANCELADA,
-            justificativa='',
+            justificativa=justificativa_limpa,
         )
 
         return requisicao

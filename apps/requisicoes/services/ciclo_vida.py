@@ -128,7 +128,7 @@ def _validar_itens(itens: list[ItemInput]) -> None:
                 f"Quantidade solicitada de '{material.nome}' é inválida.",
                 code='quantidade_invalida',
             )
-        if quantidade <= 0:
+        if not quantidade.is_finite() or quantidade <= 0:
             raise DadosInvalidos(
                 f"Quantidade solicitada de '{material.nome}' deve ser maior que zero.",
                 code='quantidade_invalida',
@@ -342,11 +342,13 @@ def enviar_para_autorizacao(
         requisicao.estado, EstadoRequisicao.AGUARDANDO_AUTORIZACAO
     )
 
-    if not requisicao.itens.exists():
+    itens_envio = list(requisicao.itens.values('material_id', 'quantidade_solicitada'))
+    if not itens_envio:
         raise DadosInvalidos(
             'A requisição precisa ter ao menos um item para ser enviada.',
             code='sem_itens',
         )
+    _validar_itens(itens_envio)
 
     if requisicao.numero_publico is None:
         ano = timezone.now().year
@@ -522,6 +524,15 @@ def autorizar_requisicao(
             'A requisição precisa ter ao menos um item para ser autorizada.',
             code='sem_itens',
         )
+    _validar_itens(
+        [
+            {
+                'material_id': item.material_id,
+                'quantidade_solicitada': item.quantidade_solicitada,
+            }
+            for item in itens
+        ]
+    )
 
     reservar_saldos_para_autorizacao(
         itens=[
@@ -598,13 +609,14 @@ def estornar_requisicao(
             'Requisição não encontrada.', code='requisicao_nao_encontrada'
         ) from None
 
+    exigir_pode_estornar_requisicao(ator, requisicao)
+
     if requisicao.estado != EstadoRequisicao.ATENDIDA:
         raise EstadoInvalido(
             'Estorno só pode ser registrado em requisição atendida.',
             code='estado_origem_invalido',
         )
 
-    exigir_pode_estornar_requisicao(ator, requisicao)
     verificar_transicao_valida(requisicao.estado, EstadoRequisicao.ESTORNADA)
 
     justificativa_limpa = (justificativa or '').strip()
@@ -667,7 +679,7 @@ def estornar_requisicao(
         )
 
     requisicao.estado = EstadoRequisicao.ESTORNADA
-    requisicao.save(update_fields=['estado'])
+    requisicao.save(update_fields=['estado', 'atualizado_em'])
 
     TimelineRequisicao.objects.create(
         requisicao=requisicao,

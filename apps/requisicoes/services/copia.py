@@ -72,7 +72,11 @@ def copiar_requisicao(
         )
 
     setor_beneficiario = beneficiario.setor
-    assert setor_beneficiario is not None
+    if setor_beneficiario is None:
+        raise DadosInvalidos(
+            f'{beneficiario.nome} não tem setor atribuído.',
+            code='beneficiario_inelegivel',
+        )
 
     itens_origem = list(origem.itens.all())
     if not itens_origem:

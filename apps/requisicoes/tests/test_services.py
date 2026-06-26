@@ -640,7 +640,7 @@ def test_cancelar_ou_descartar_requisicao_aguardando_autorizacao_ignora_justific
     assert req is not None
     assert req.estado == EstadoRequisicao.CANCELADA
     evento = req.eventos.filter(evento=EventoTimeline.CANCELAMENTO).get()
-    assert evento.justificativa == ''
+    assert evento.justificativa == 'Cancelamento solicitado pelo usuário.'
     assert not req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).exists()
 
 
@@ -1159,7 +1159,7 @@ def test_autorizar_requisicao_bloqueia_estoque_sem_efeitos_parciais(
     reservado_antes = saldo.saldo_reservado
     fisico_antes = saldo.saldo_fisico
 
-    with pytest.raises(ConflitoDominio):
+    with pytest.raises((DadosInvalidos, ConflitoDominio)):
         autorizar_requisicao(
             ator_id=chefe_obras.pk,
             requisicao_id=requisicao_aguardando.pk,
@@ -1695,7 +1695,7 @@ def test_registrar_atendimento_parcial_libera_reserva_e_registra_evento(
         'observacao': 'Retirada parcial.',
         'liberou_reserva': True,
     }
-    assert not req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).exists()
+    assert req.eventos.filter(evento=EventoTimeline.LIBERACAO_RESERVA).exists()
 
 
 @pytest.mark.django_db
@@ -2573,13 +2573,13 @@ def test_estornar_requisicao_ja_estornada_levanta_estado_invalido(
         justificativa='Primeiro estorno.',
     )
 
-    with pytest.raises(EstadoInvalido) as excinfo:
+    with pytest.raises(PermissaoNegada) as excinfo:
         estornar_requisicao(
             ator_id=chefe_almoxarifado.pk,
             requisicao_id=req.pk,
             justificativa='Segundo estorno.',
         )
-    assert excinfo.value.code == 'estado_origem_invalido'
+    assert excinfo.value.code == 'estornar_requisicao_negada'
 
 
 @pytest.mark.django_db
@@ -2708,16 +2708,16 @@ def test_estornar_requisicao_sem_justificativa_levanta_dados_invalidos(
 
 @pytest.mark.django_db
 def test_estornar_requisicao_estado_invalido(requisicao_autorizada, chefe_almoxarifado):
-    """Estornar em estado não atendida → EstadoInvalido."""
+    """Estornar em estado não atendida → PermissaoNegada (policy verifica estado)."""
     from apps.requisicoes.services import estornar_requisicao
 
-    with pytest.raises(EstadoInvalido) as excinfo:
+    with pytest.raises(PermissaoNegada) as excinfo:
         estornar_requisicao(
             ator_id=chefe_almoxarifado.pk,
             requisicao_id=requisicao_autorizada.pk,
             justificativa='Inválido.',
         )
-    assert excinfo.value.code == 'estado_origem_invalido'
+    assert excinfo.value.code == 'estornar_requisicao_negada'
 
 
 @pytest.mark.django_db

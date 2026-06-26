@@ -349,6 +349,14 @@ def registrar_atendimento(
         metadata=metadata_principal,
     )
 
+    if houve_liberacao:
+        TimelineRequisicao.objects.create(
+            requisicao=requisicao,
+            evento=EventoTimeline.LIBERACAO_RESERVA,
+            ator=ator,
+            estado_resultante=EstadoRequisicao.ATENDIDA,
+        )
+
     _criador_id = requisicao.criador_id
     _beneficiario_id = requisicao.beneficiario_id
     _req_id = requisicao.pk
@@ -410,15 +418,6 @@ def registrar_devolucao(
             code='quantidade_invalida',
         )
 
-    entregue_liquida = entregue_liquida_por_item(
-        requisicao_id=requisicao_id, item_id=item_id
-    )
-    if quantidade > entregue_liquida:
-        raise ConflitoDominio(
-            'A quantidade devolvida excede a entregue líquida do item.',
-            code='quantidade_excede_entregue_liquida',
-        )
-
     try:
         item = ItemRequisicao.objects.select_related('material').get(
             pk=item_id, requisicao=requisicao
@@ -428,6 +427,15 @@ def registrar_devolucao(
             'Item não pertence à requisição informada.',
             code='item_nao_pertence_requisicao',
         ) from None
+
+    entregue_liquida = entregue_liquida_por_item(
+        requisicao_id=requisicao_id, item_id=item_id
+    )
+    if quantidade > entregue_liquida:
+        raise ConflitoDominio(
+            'A quantidade devolvida excede a entregue líquida do item.',
+            code='quantidade_excede_entregue_liquida',
+        )
 
     saldos = list(
         SaldoEstoque.objects.select_for_update()
