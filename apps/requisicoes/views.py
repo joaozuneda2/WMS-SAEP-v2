@@ -1134,3 +1134,75 @@ def estornar_requisicao_view(request, pk: int) -> HttpResponse:
     else:
         messages.success(request, 'Requisição estornada com sucesso.')
     return _htmx_redirect(request, reverse('requisicoes:detalhe', args=[pk]))
+
+
+@login_required
+@require_http_methods(['POST'])
+def confirmar_importacao_scpi_view(request):
+    import base64
+
+    from django.urls import reverse as _reverse
+
+    from apps.core.exceptions import ConflitoDominio, DadosInvalidos, PermissaoNegada
+    from apps.estoque.models import Estoque
+    from apps.estoque.policies import exigir_pode_confirmar_importacao_scpi
+    from apps.estoque.services import confirmar_importacao_scpi
+    from apps.requisicoes.services.ciclo_vida import (
+        registrar_timeline_divergencia_importacao,
+    )
+
+    try:
+        exigir_pode_confirmar_importacao_scpi(request.user)
+    except PermissaoNegada as exc:
+        raise PermissionDenied(str(exc))
+
+    conteudo_b64 = request.session.get('scpi_preview_bytes')
+    arquivo_nome = request.session.get('scpi_preview_nome', 'importacao.csv')
+
+    if not conteudo_b64:
+        return render(
+            request,
+            'estoque/confirmar_importacao_scpi.html',
+            {
+                'erro': 'Nenhuma pré-visualização ativa. Faça o upload do arquivo novamente.'
+            },
+        )
+
+    estoque = Estoque.objects.filter(ativo=True).first()
+    if estoque is None:
+        return render(
+            request,
+            'estoque/confirmar_importacao_scpi.html',
+            {'erro': 'Não há estoque ativo configurado.'},
+        )
+
+    try:
+        conteudo = base64.b64decode(conteudo_b64)
+        importacao = confirmar_importacao_scpi(
+            ator_id=request.user.id,
+            conteudo_bytes=conteudo,
+            arquivo_nome=arquivo_nome,
+            estoque_id=estoque.pk,
+            _pos_importacao_hook=registrar_timeline_divergencia_importacao,
+        )
+    except ConflitoDominio as exc:
+        return render(
+            request,
+            'estoque/confirmar_importacao_scpi.html',
+            {'erro': str(exc)},
+        )
+    except DadosInvalidos as exc:
+        return render(
+            request,
+            'estoque/confirmar_importacao_scpi.html',
+            {'erro': str(exc)},
+        )
+
+    request.session.pop('scpi_preview_bytes', None)
+    request.session.pop('scpi_preview_nome', None)
+
+    from django.http import HttpResponseRedirect
+
+    return HttpResponseRedirect(
+        _reverse('estoque:sucesso_importacao_scpi', kwargs={'pk': importacao.pk})
+    )
