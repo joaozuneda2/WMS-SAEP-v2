@@ -69,6 +69,13 @@ Após o flip, a assinatura vira `pode_ser_beneficiario(papel: PapelEfetivo) -> b
 - Todas as funções: `ator: User` → `papel: PapelEfetivo`.
 - Remover imports desnecessários (`ObjectDoesNotExist`, `SetorClassificacao`, `User` da assinatura).
 
+### `apps/estoque/services.py`
+- Após carregar `ator`, inserir `papel = papel_efetivo(ator)` — uma vez por service function.
+- Passar `papel` para `exigir_pode_*` calls.
+- `papel.ator_id` deve ser propagado para `MovimentacaoEstoque.ator` nas saídas excepcionais, estornos e ajustes — mantendo atribuição correta de autoria no ledger.
+- Funções afetadas: `registrar_saida_excepcional`, `estornar_saida_excepcional`, `confirmar_importacao_scpi`, `desativar_material`, `ativar_material` (e similares que carregam `ator`).
+- Limpar imports de `User` não mais necessários após o flip.
+
 ### `apps/estoque/views.py`
 - Resolver `papel = papel_efetivo(request.user)` uma vez por view que chama policies.
 - Passar `papel` para todos os `exigir_pode_*` e `pode_*` calls.
@@ -119,10 +126,11 @@ Após o flip, a assinatura vira `pode_ser_beneficiario(papel: PapelEfetivo) -> b
 - `pode_ser_beneficiario(papel_beneficiario)`.
 
 ### Testes
-- `apps/requisicoes/tests/test_policies.py` — atualizar fixtures e chamadas para passar `PapelEfetivo`.
+- `apps/requisicoes/tests/test_policies.py` — atualizar fixtures e chamadas para passar `PapelEfetivo`. **Matriz de permissões validada apenas aqui**, sem duplicar em testes de services/views.
 - `apps/accounts/tests/` — atualizar testes de `pode_gerir_cadastro`.
 - `apps/estoque/tests/` — atualizar testes de policies de estoque.
-- Novos testes de `PapelEfetivo` com campos `ativo`, `eh_superusuario`, `ator_id`.
+- Novos testes de `PapelEfetivo` com campos `ativo`, `eh_superusuario`, `ator_id` — sem DB.
+- Testes de service/view focam em **fluxo e efeitos colaterais** (estado final, timeline, ledger), não em revalidar combinações de permissão.
 
 ---
 
@@ -141,6 +149,9 @@ Todos os testes existentes em `test_policies.py` devem passar, ajustando apenas 
 | Ex-IO policies | `pode_registrar_saida_excepcional`, `pode_consultar_historico_scpi` | `papel.eh_chefe_de_almoxarifado` |
 | Beneficiário elegível | `pode_ser_beneficiario` | `papel.pode_ser_beneficiario` |
 | Escopo criação | `pode_criar_para_beneficiario` | sem banco, dado puro |
+| PER-02: auxiliar cria no próprio setor | `pode_criar_para_beneficiario` | `papel.setores_em_escopo` contém `beneficiario.setor_id` → True; setor diferente → False |
+| PER-03: chefe autoriza só beneficiários do setor chefiado | `pode_autorizar_requisicao`, `pode_recusar_requisicao` | `papel.setor_chefiado_ativo_id == requisicao.setor_beneficiario_id` → True; setor diferente → False |
+| PER-04: almoxarifado cria para qualquer setor | `pode_criar_para_beneficiario` | `papel.eh_almoxarifado=True` → True para qualquer beneficiário elegível |
 
 ### Negativo (opt-out)
 - `pode_gerir_cadastro` com `eh_superusuario=False` → False
@@ -161,6 +172,7 @@ Da `docs/matriz-invariantes.md` (se existir):
 
 | Risco | Mitigação |
 |---|---|
+| **`papel_efetivo()` é ponto central**: erro em `ativo`, `eh_superusuario` ou `ator_id` afeta todas as policies no mesmo sentido, silenciosamente | Testes unitários diretos de `papel_efetivo()` sem DB para cada perfil (superuser ativo, superuser inativo, chefe ativo, auxiliar, solicitante puro, inativo); validar os 3 novos campos explicitamente |
 | Views com múltiplas chamadas de policy para o mesmo `request.user` podem esquecer de reutilizar `papel` | A revisão verifica uniformidade: `papel_efetivo` deve aparecer apenas uma vez por view function |
 | `papel_efetivo(beneficiario)` chamado em services é uma query extra por request | Aceito — o ADR fala "caller resolve uma vez" para o ator; beneficiário é caso diferente e documentado |
 | Testes de policy que constroem `User` com `create_user` podem não precisar mais do banco | Migrar para `PapelEfetivo(...)` sem banco: testes ficam mais rápidos e sem DB |
