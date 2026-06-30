@@ -14,10 +14,21 @@
 ### O que NÃO muda
 
 - Assinaturas de services públicos (ainda keyword-only com `ator_id`).
+- Views continuam passando **apenas `ator_id=request.user.id`** para services — nunca `papel`.
 - Recursos avaliados continuam como ORM objects (`Requisicao`, `User` como beneficiário, `Notificacao`) — apenas o ator muda de representação.
 - `resolver_escopo_criacao_requisicao` permanece em `requisicoes/policies.py`; define QuerySets lazily, sem executar IO no momento da chamada.
 - Comportamento de autorização permanece idêntico.
 - `notificacoes/policies.py` não recebia `papel_efetivo` antes — apenas recebe `PapelEfetivo` no flip.
+
+### Thin-views: enforcement vs. renderização
+
+ADR-0004 define `policies.py` como "chamadas tanto por views quanto por services". ADR-0011 declara explicitamente: _"Templates e views podem chamar `pode_*` para controle de renderização."_
+
+O contrato é:
+- **Enforcement** (`exigir_pode_*`) → apenas services. Views nunca chamam `exigir_pode_*`.
+- **Renderização** (`pode_*`) → views, para calcular contexto de template (quais botões/ações mostrar).
+
+Views que resolvem `papel = papel_efetivo(request.user)` fazem isso **apenas para chamadas locais de `pode_*`** que alimentam o contexto de template. O `papel` não é passado para services — services continuam recebendo `ator_id` e resolvem `papel_efetivo` internamente.
 
 ---
 
