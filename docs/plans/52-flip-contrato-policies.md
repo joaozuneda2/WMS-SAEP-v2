@@ -88,8 +88,9 @@ Após o flip, a assinatura vira `pode_ser_beneficiario(papel: PapelEfetivo) -> b
 - Limpar imports de `User` não mais necessários após o flip.
 
 ### `apps/estoque/views.py`
-- Resolver `papel = papel_efetivo(request.user)` uma vez por view que chama policies.
-- Passar `papel` para todos os `exigir_pode_*` e `pode_*` calls.
+- Resolver `papel = papel_efetivo(request.user)` uma vez por view que chama `pode_*` para contexto de renderização.
+- **`pode_*` (renderização)**: passar `papel`. Ex.: `pode_registrar_saida_excepcional(papel)` para controlar visibilidade do botão.
+- **`exigir_pode_*` em views (guard de read-only paths)**: o código atual já usa `exigir_pode_*` em views para caminhos de leitura (selectors não enforçam). Esses calls preservam o padrão existente — mudam apenas o argumento de `request.user` para `papel`. _Esta decisão preexiste ao issue #52; remoção de enforcement de views é escopo de issue separado._
 - Afetadas: `listar_saidas_excepcionais_view`, `registrar_saida_excepcional_view`, `detalhe_saida_excepcional_view`, `estornar_saida_excepcional_view`, `visualizar_preview_scpi_view`, `confirmar_importacao_scpi_view`, `historico_importacoes_scpi_view`, `catalogo_estoque_view`, views de movimentações.
 
 ### `apps/notificacoes/policies.py`
@@ -114,7 +115,9 @@ Após o flip, a assinatura vira `pode_ser_beneficiario(papel: PapelEfetivo) -> b
 - Remover import de `User` (usado apenas nas assinaturas).
 
 ### `apps/requisicoes/views.py`
-- Resolver `papel = papel_efetivo(request.user)` uma vez por view que chama policies.
+- Resolver `papel = papel_efetivo(request.user)` uma vez por view que chama `pode_*` para renderização.
+- **`pode_*` (renderização)**: passar `papel` para contexto de template (`pode_cancelar`, `pode_autorizar`, etc.).
+- **`exigir_pode_*` em views (guard de read-only / acesso antecipado)**: padrão existente preservado — argumento muda de `request.user` para `papel`. _Escopo de remoção é issue separado._
 - Views afetadas: `detalhe_requisicao_view`, `criar_requisicao_view`, `editar_rascunho_view`, `copiar_requisicao_view`, `fila_autorizacao_view`, `processar_autorizacao_view`, `fila_atendimento_view`, `separar_retirada_view`, `atender_retirada_view`.
 
 ### `apps/requisicoes/services/ciclo_vida.py`
