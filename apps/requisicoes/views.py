@@ -4,6 +4,7 @@ Fluxo: ler input → chamar service com IDs → traduzir exceção → renderiza
 Nenhuma regra de domínio, query de escopo ou decisão de autorização própria.
 """
 
+from apps.accounts.papeis import papel_efetivo
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -1160,8 +1161,9 @@ def confirmar_importacao_scpi_view(request):
         registrar_timeline_divergencia_importacao,
     )
 
+    papel = papel_efetivo(request.user)
     try:
-        exigir_pode_confirmar_importacao_scpi(request.user)
+        exigir_pode_confirmar_importacao_scpi(papel)
     except PermissaoNegada as exc:
         raise PermissionDenied(str(exc))
 
