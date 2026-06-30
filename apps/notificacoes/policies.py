@@ -13,7 +13,9 @@ def pode_ver_notificacao(papel: 'PapelEfetivo', notificacao: 'Notificacao') -> b
     return papel.ativo and notificacao.destinatario_id == papel.ator_id
 
 
-def exigir_pode_ver_notificacao(papel: 'PapelEfetivo', notificacao: 'Notificacao') -> None:
+def exigir_pode_ver_notificacao(
+    papel: 'PapelEfetivo', notificacao: 'Notificacao'
+) -> None:
     if not pode_ver_notificacao(papel, notificacao):
         from apps.core.exceptions import PermissaoNegada
 

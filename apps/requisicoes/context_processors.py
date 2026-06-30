@@ -33,8 +33,8 @@ def flags_de_papel(request):
         }
     papel = papel_efetivo(usuario)
     return {
-        'pode_ver_fila_autorizacao': pode_ver_fila_autorizacao(usuario),
-        'pode_ver_fila_atendimento': pode_ver_fila_atendimento(usuario),
+        'pode_ver_fila_autorizacao': pode_ver_fila_autorizacao(papel),
+        'pode_ver_fila_atendimento': pode_ver_fila_atendimento(papel),
         'pode_consultar_saidas_excepcionais': pode_consultar_saidas_excepcionais(papel),
         'pode_visualizar_preview_scpi': pode_visualizar_preview_scpi(papel),
         'pode_consultar_historico_scpi': pode_consultar_historico_scpi(papel),
