@@ -25,7 +25,7 @@
 ADR-0004 define `policies.py` como "chamadas tanto por views quanto por services". ADR-0011 declara explicitamente: _"Templates e views podem chamar `pode_*` para controle de renderização."_
 
 O contrato é:
-- **Enforcement** (`exigir_pode_*`) → apenas services. Views nunca chamam `exigir_pode_*`.
+- **Enforcement** (`exigir_pode_*`) → services para novos fluxos; guards legados em views read-only permanecem até issue separada.
 - **Renderização** (`pode_*`) → views, para calcular contexto de template (quais botões/ações mostrar).
 
 Views que resolvem `papel = papel_efetivo(request.user)` fazem isso **apenas para chamadas locais de `pode_*`** que alimentam o contexto de template. O `papel` não é passado para services — services continuam recebendo `ator_id` e resolvem `papel_efetivo` internamente.
