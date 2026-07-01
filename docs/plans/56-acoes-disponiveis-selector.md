@@ -19,12 +19,12 @@ Ref: ADR-0011 (Emenda 2026-06-26, seção "Transições keyed por operação"), 
 
 - `apps/requisicoes/selectors.py` — adiciona `acoes_disponiveis` + mapa privado `Operacao -> policy_fn`.
 - `apps/requisicoes/views.py` — `_detalhe_context` passa a usar o selector.
-- `apps/requisicoes/tests/test_selectors_acoes_disponiveis.py` (novo) — testes diretos do selector, papel × estado, sem HTTP.
+- `apps/requisicoes/tests/test_selectors.py` — testes diretos do selector, papel × estado, sem HTTP (adicionados ao módulo existente, não em arquivo novo).
 - `docs/plans/56-acoes-disponiveis-selector.md` — este plano.
 
 ## Test strategy
 
-Testes puros (sem DB), seguindo o padrão de `test_policies.py` (`PapelEfetivo` construído diretamente, `Requisicao` como `SimpleNamespace`/instância não persistida com `estado` setado).
+Testes diretos do selector adicionados a `apps/requisicoes/tests/test_selectors.py` (módulo existente, sem fragmentar a suíte), chamando `acoes_disponiveis` diretamente e comparando o `frozenset[Operacao]` retornado. Segue o padrão puro (sem DB) de `test_policies.py`: `PapelEfetivo` construído diretamente, `Requisicao` como `SimpleNamespace`/instância não persistida com `estado` setado.
 
 Matriz por operação (cobre as 10 operações de `TRANSICOES`):
 1. Estado correto + papel autorizado → `Operacao.X` presente no frozenset.
