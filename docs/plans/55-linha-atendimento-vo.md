@@ -55,7 +55,7 @@
 
 ## Invariants
 
-- ADR-0004 (emenda 2026-06-26): forms/formsets entregam VOs tipados, nunca dicts anônimos nem comandos; form não conhece o service.
+- ADR-0004 (emenda 2026-06-26): aplicado nesta slice ao novo `BaseItemAtendimentoFormSet`/`LinhaAtendimento` — forms/formsets entregam VOs tipados, nunca dicts anônimos nem comandos; form não conhece o service. `BaseItemRequisicaoFormSet.linhas_validas()` permanece fora de escopo (continua retornando dict), conforme já declarado em "Não inclui".
 - ADR-0011: validação de qualidade de input no form (`ValidationError`); invariantes de domínio no service (`apps.core.exceptions`); service mantém assinatura keyword-only e IDs na borda.
 - TR-016/017/018 (atendimento total/parcial, bloqueio sem entrega) — comportamento do service não muda, só o tipo do parâmetro `itens`.
 
