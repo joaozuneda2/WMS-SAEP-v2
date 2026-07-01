@@ -117,8 +117,8 @@ def verificar_transicao_valida(
     transicao = TRANSICOES[operacao]
     if requisicao.estado not in transicao.estados_origem:
         raise EstadoInvalido(
-            f"Transição '{operacao.label}' inválida no estado "
-            f"'{requisicao.get_estado_display()}'.",
+            f"Transição '{operacao.label}' não é permitida no estado atual "
+            f"('{requisicao.get_estado_display()}').",
             code='estado_origem_invalido',
         )
     return transicao
