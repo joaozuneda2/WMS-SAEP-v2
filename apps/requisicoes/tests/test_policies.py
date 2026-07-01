@@ -33,7 +33,7 @@ from apps.requisicoes.policies import (
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Auxiliares
 # ---------------------------------------------------------------------------
 
 SETOR_ID = 10
@@ -146,7 +146,7 @@ def test_pode_ser_beneficiario_sem_setor():
 
 
 # ---------------------------------------------------------------------------
-# resolver_escopo_criacao_requisicao — modo (DB-free onde possível)
+# resolver_escopo_criacao_requisicao — modo (sem banco onde possível)
 # ---------------------------------------------------------------------------
 
 

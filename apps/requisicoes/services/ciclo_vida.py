@@ -180,15 +180,16 @@ def criar_requisicao(
 
     papel = papel_efetivo(ator)
 
-    # Autorização
-    exigir_pode_criar_para_beneficiario(papel, beneficiario)
-
-    # Beneficiário precisa ter setor (snapshot)
+    # Beneficiário precisa ter setor (snapshot) — verificado antes da autorização
+    # para que o código de erro beneficiario_inelegivel seja emitido corretamente.
     if not (beneficiario.is_active and beneficiario.setor_id is not None):
         raise DadosInvalidos(
             f'{beneficiario.nome} não pode ser beneficiário: usuário inativo ou sem setor.',
             code='beneficiario_inelegivel',
         )
+
+    # Autorização
+    exigir_pode_criar_para_beneficiario(papel, beneficiario)
 
     setor_beneficiario = beneficiario.setor
     assert setor_beneficiario is not None  # garantido pela checagem de setor_id acima

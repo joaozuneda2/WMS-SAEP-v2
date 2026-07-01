@@ -27,7 +27,7 @@ from apps.estoque.policies import (
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Auxiliares
 # ---------------------------------------------------------------------------
 
 
@@ -63,6 +63,7 @@ SOLICITANTE = _papel()
 CHEFE_OBRAS = _papel(setores_em_escopo=(5,), setor_chefiado_ativo_id=5)
 AUX_OBRAS = _papel(setores_em_escopo=(5,))
 INATIVO = _papel(ativo=False)
+SUPERUSER_INATIVO = _papel(ativo=False, eh_superusuario=True)
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +86,9 @@ class TestPodeConsultarSaidasExcepcionais:
 
     def test_inativo_nao_pode(self):
         assert pode_consultar_saidas_excepcionais(INATIVO) is False
+
+    def test_superusuario_inativo_nao_pode(self):
+        assert pode_consultar_saidas_excepcionais(SUPERUSER_INATIVO) is False
 
 
 class TestExigirPodeConsultarSaidasExcepcionais:

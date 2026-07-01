@@ -63,7 +63,6 @@ def copiar_requisicao(
         )
 
     papel = papel_efetivo(ator)
-    exigir_pode_copiar_requisicao(papel, origem)
 
     beneficiario = origem.beneficiario
     if not (beneficiario.is_active and beneficiario.setor_id is not None):
@@ -71,6 +70,8 @@ def copiar_requisicao(
             f'{beneficiario.nome} não pode ser beneficiário: usuário inativo ou sem setor.',
             code='beneficiario_inelegivel',
         )
+
+    exigir_pode_copiar_requisicao(papel, origem)
 
     setor_beneficiario = beneficiario.setor
     if setor_beneficiario is None:
