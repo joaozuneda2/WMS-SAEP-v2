@@ -297,6 +297,11 @@ def test_criador_retorna_true_independente_do_estado():
     assert pode_editar_rascunho(SOLICITANTE, req) is True
 
 
+def test_superusuario_pode_editar_rascunho_de_terceiro():
+    req = _req(EstadoRequisicao.RASCUNHO, criador_id=OUTRO_ID)
+    assert pode_editar_rascunho(SUPERUSER, req) is True
+
+
 # ---------------------------------------------------------------------------
 # pode_enviar_rascunho
 # ---------------------------------------------------------------------------
@@ -315,6 +320,11 @@ def test_nao_criador_nao_pode_enviar():
 def test_criador_inativo_nao_pode_enviar():
     req = _req(EstadoRequisicao.RASCUNHO, criador_id=ATOR_ID)
     assert pode_enviar_rascunho(INATIVO, req) is False
+
+
+def test_superusuario_pode_enviar_rascunho_de_terceiro():
+    req = _req(EstadoRequisicao.RASCUNHO, criador_id=OUTRO_ID)
+    assert pode_enviar_rascunho(SUPERUSER, req) is True
 
 
 # ---------------------------------------------------------------------------

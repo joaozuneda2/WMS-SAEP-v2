@@ -129,6 +129,9 @@ def test_sem_chefia_sem_vinculo(usuario):
     assert papel.setores_em_escopo == ()
     assert papel.setor_chefiado_ativo_id is None
     assert papel.pode_ser_beneficiario is True
+    assert papel.ativo is True
+    assert papel.eh_superusuario is False
+    assert papel.ator_id == usuario.pk
 
 
 @pytest.mark.django_db
@@ -256,6 +259,9 @@ def test_usuario_inativo_nao_tem_papel_operacional(db, setor_almox):
     assert papel.setores_em_escopo == ()
     assert papel.setor_chefiado_ativo_id is None
     assert papel.pode_ser_beneficiario is False
+    assert papel.ativo is False
+    assert papel.eh_superusuario is False
+    assert papel.ator_id == inativo.pk
 
 
 @pytest.mark.django_db

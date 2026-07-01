@@ -66,6 +66,23 @@ INATIVO = _papel(ativo=False)
 SUPERUSER_INATIVO = _papel(ativo=False, eh_superusuario=True)
 
 
+@pytest.mark.parametrize(
+    'policy',
+    [
+        pode_consultar_saidas_excepcionais,
+        pode_registrar_saida_excepcional,
+        pode_estornar_saida_excepcional,
+        pode_visualizar_preview_scpi,
+        pode_confirmar_importacao_scpi,
+        pode_consultar_historico_scpi,
+        pode_gerir_catalogo,
+        pode_consultar_movimentacoes_estoque,
+    ],
+)
+def test_superusuario_inativo_nao_pode_em_nenhuma_policy(policy):
+    assert policy(SUPERUSER_INATIVO) is False
+
+
 # ---------------------------------------------------------------------------
 # pode_consultar_saidas_excepcionais
 # ---------------------------------------------------------------------------

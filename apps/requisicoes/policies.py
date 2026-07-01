@@ -163,7 +163,9 @@ def pode_editar_rascunho(papel: 'PapelEfetivo', requisicao: Requisicao) -> bool:
     Verificação de estado (RASCUNHO) é feita pelo service via transitions.py,
     que lança EstadoInvalido. Esta policy só trata autorização de ator.
     """
-    return papel.ativo and papel.ator_id == requisicao.criador_id
+    return papel.ativo and (
+        papel.eh_superusuario or papel.ator_id == requisicao.criador_id
+    )
 
 
 def exigir_pode_editar_rascunho(papel: 'PapelEfetivo', requisicao: Requisicao) -> None:
@@ -180,13 +182,15 @@ def exigir_pode_editar_rascunho(papel: 'PapelEfetivo', requisicao: Requisicao) -
 
 
 def pode_enviar_rascunho(papel: 'PapelEfetivo', requisicao: Requisicao) -> bool:
-    """True se o ator é o criador da requisição.
+    """True se o ator é o criador ou superusuário.
 
     Verificação de estado (RASCUNHO) é responsabilidade do service via
     transitions.py, que lança EstadoInvalido. Esta policy só trata
     autorização de ator.
     """
-    return papel.ativo and papel.ator_id == requisicao.criador_id
+    return papel.ativo and (
+        papel.eh_superusuario or papel.ator_id == requisicao.criador_id
+    )
 
 
 def exigir_pode_enviar_rascunho(papel: 'PapelEfetivo', requisicao: Requisicao) -> None:
