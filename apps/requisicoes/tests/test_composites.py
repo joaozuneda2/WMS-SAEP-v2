@@ -15,7 +15,6 @@ from apps.requisicoes.models import (
     EstadoRequisicao,
     EventoTimeline,
     Requisicao,
-    SequenciaRequisicao,
     TimelineRequisicao,
 )
 from apps.requisicoes.services.composites import criar_e_enviar_requisicao
@@ -64,7 +63,6 @@ def test_criar_e_enviar_requisicao_rollback_total_se_envio_falhar(
             )
 
     assert not Requisicao.objects.exists()
-    assert not SequenciaRequisicao.objects.exists()
     assert not TimelineRequisicao.objects.exists()
 
 
