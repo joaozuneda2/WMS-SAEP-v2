@@ -116,6 +116,7 @@ def separar_para_retirada(
             'Esta requisição não está autorizada para separação.',
             code='estado_origem_invalido',
         )
+    verificar_transicao_valida(Operacao.SEPARAR_PARA_RETIRADA, requisicao)
     if not requisicao.itens.filter(quantidade_autorizada__gt=0).exists():
         raise EstadoInvalido(
             'Esta requisição não possui itens com quantidade autorizada.',
@@ -162,8 +163,6 @@ def separar_para_retirada(
                 f'Corrija o estoque ou cancele a requisição via TR-013.',
                 code='separacao_bloqueada',
             )
-
-    verificar_transicao_valida(Operacao.SEPARAR_PARA_RETIRADA, requisicao)
 
     requisicao.estado = EstadoRequisicao.PRONTA_PARA_RETIRADA
     requisicao.save(update_fields=['estado', 'atualizado_em'])

@@ -1,4 +1,4 @@
-"""Testes da tabela de transições keyed por Operacao (#53, ADR-0011 emenda)."""
+"""Testes da tabela de transições indexada por Operacao (#53, ADR-0011 emenda)."""
 
 import pytest
 
@@ -12,7 +12,7 @@ from apps.requisicoes.models import (
 from apps.requisicoes.transitions import TRANSICOES, verificar_transicao_valida
 
 
-def test_verificar_transicao_valida_retorna_spec_no_caminho_feliz():
+def test_verificar_transicao_valida_retorna_especificacao_no_caminho_feliz():
     requisicao = Requisicao(estado=EstadoRequisicao.RASCUNHO)
 
     transicao = verificar_transicao_valida(Operacao.ENVIAR_PARA_AUTORIZACAO, requisicao)
@@ -27,6 +27,7 @@ def test_verificar_transicao_valida_estado_origem_invalido():
         verificar_transicao_valida(Operacao.ENVIAR_PARA_AUTORIZACAO, requisicao)
 
     assert excinfo.value.code == 'estado_origem_invalido'
+    assert 'não é permitida' in str(excinfo.value)
 
 
 @pytest.mark.parametrize(

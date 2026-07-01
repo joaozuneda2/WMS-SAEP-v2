@@ -1,4 +1,4 @@
-"""Tabela declarativa de transições de estado da Requisicao, keyed por Operacao.
+"""Tabela declarativa de transições de estado da Requisicao, indexada por Operacao.
 
 ADR-0011 (emenda 2026-06-26): a tabela responde só "operação permitida
 **neste estado**?" — nunca autorização (isso é policy/papel, fatia separada).
@@ -8,7 +8,7 @@ TR-001 (N/A → rascunho) é criação e TR-003 (descarte de rascunho não envia
 chama `verificar_transicao_valida` (sem estado de origem / sem transição de
 estado).
 
-Adicionar novas transições aqui somente quando o service correspondente for
+Adicionar novas transições aqui somente quando o serviço correspondente for
 implementado com policy, testes e timeline próprios.
 """
 
@@ -25,7 +25,7 @@ from apps.requisicoes.models import (
 
 @dataclass(frozen=True)
 class TransicaoRequisicao:
-    """Spec de uma operação: de onde pode partir, para onde vai, o que registra."""
+    """Especificação de uma operação: de onde pode partir, para onde vai, o que registra."""
 
     operacao: Operacao
     estados_origem: frozenset[str]
