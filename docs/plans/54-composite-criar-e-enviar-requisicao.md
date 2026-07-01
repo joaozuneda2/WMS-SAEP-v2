@@ -5,7 +5,7 @@
 **O que muda:**
 - Novo service composto `criar_e_enviar_requisicao` em `apps/requisicoes/services/composites.py`, dono da fronteira transacional (`transaction.atomic`), orquestrando os atômicos existentes `criar_requisicao` + `enviar_para_autorizacao`.
 - Reexport do novo composto em `apps/requisicoes/services/__init__.py`.
-- A view `nova_requisicao` (`apps/requisicoes/views.py`) para de abrir `transaction.atomic` e de encadear os dois services manualmente; passa a apenas selecionar o caso de uso (`criar_requisicao` isolado para rascunho, `criar_e_enviar_requisicao` para envio direto) — dispatch trivial conforme `acao`.
+- A view `nova_requisicao` (`apps/requisicoes/views.py`) para de abrir `transaction.atomic` e de encadear os dois services manualmente; passa a apenas selecionar o caso de uso — dispatch trivial conforme `acao`: `criar_e_enviar_requisicao` quando `acao == 'enviar'`, `criar_requisicao` isolado em qualquer outro caso (preserva o fallback atual, onde `acao` malformado ou ausente cai em rascunho — `acao = request.POST.get('acao', 'rascunho')`).
 
 **O que NÃO muda:**
 - Nenhuma regra de domínio, policy ou transição de estado dentro de `criar_requisicao`/`enviar_para_autorizacao` — ambos permanecem intactos, já com seus próprios `@transaction.atomic`.
@@ -58,7 +58,7 @@ Retorno paralelo a `criar_requisicao`: a própria `Requisicao` (já em `AGUARDAN
 ## Estratégia de testes
 
 - **Caminho feliz (service, sem HTTP):** `criar_e_enviar_requisicao` cria rascunho + envia em uma chamada; resultado tem `numero_publico` emitido e `estado == AGUARDANDO_AUTORIZACAO`; timeline registra `CRIACAO` seguido de `ENVIO_AUTORIZACAO`.
-- **All-or-nothing:** se `enviar_para_autorizacao` falhar (ex. itens inválidos entre a criação e o envio, ou o próprio ator sem permissão de envio), nenhuma `Requisicao` deve persistir — a criação é revertida junto com o envio.
+- **All-or-nothing:** se `enviar_para_autorizacao` falhar internamente após `criar_requisicao` já ter sido aplicado (ex. `ator_id` sem permissão de envio sobre o próprio rascunho recém-criado, levantando `PermissaoNegada`), a exceção deve propagar e nenhum efeito deve persistir — nem `Requisicao`/`ItemRequisicao`, nem `SequenciaRequisicao` incrementada, nem `TimelineRequisicao` (nem o evento de `CRIACAO` sobrevive ao rollback).
 - **Propagação de exceção de domínio:** erro de validação de item propaga `DadosInvalidos` sem encapsulamento.
 - **Regressão da view:** suíte existente de `test_views.py` para `nova_requisicao` (rascunho e envio direto) deve passar sem alteração — comportamento observável idêntico.
 - Sem teste de HTTP novo — a mudança na view é só dispatch; a suíte de views existente já cobre os dois fluxos (`acao=rascunho` e `acao=enviar`).
