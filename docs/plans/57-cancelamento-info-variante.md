@@ -32,25 +32,30 @@ Blocked by #53 (fechada) e #56 (fechada, mergeada em `1fe41be`).
   projeção de `cancelamento_info.requer_justificativa`) porque `_modal_form_cancelar.html`
   já a consome como bool — nenhuma mudança nesse partial.
 - `apps/requisicoes/templatetags/requisicoes_tags.py` — novo `simple_tag` `cancelamento_copy`
-  que recebe `CancelamentoInfo` e devolve um dict de copy (`titulo`, `descricao`, `trigger`,
-  `confirmar`) via lookup por `(variante, libera_reserva)`. É aqui — na camada de
-  apresentação, não no view/domínio — que o texto (idêntico ao atual, ver "Consolidação de
-  copy" abaixo) passa a viver.
+  que recebe `CancelamentoInfo` + `requisicao.estado` e devolve um dict de copy (`titulo`,
+  `descricao`, `trigger`, `confirmar`) via lookup. É aqui — na camada de apresentação, não no
+  view/domínio — que o texto (idêntico ao atual, byte a byte, ver "Preservação de copy"
+  abaixo) passa a viver.
 - `apps/requisicoes/templates/requisicoes/detalhe.html` — os dois blocos que hoje interpolam
   `cancelamento_titulo`/`cancelamento_descricao`/`cancelamento_trigger`/`cancelamento_confirmar`
-  passam a chamar `{% cancelamento_copy cancelamento_info as cancelamento_copy_texto %}` e ler
-  os mesmos 4 campos de `cancelamento_copy_texto`.
+  passam a chamar `{% cancelamento_copy cancelamento_info requisicao.estado as
+  cancelamento_copy_texto %}` e ler os mesmos 4 campos de `cancelamento_copy_texto`.
 
-**Consolidação de copy (dentro do escopo, decorre diretamente do pedido):**
-Hoje existem 4 ramos de texto porque `RASCUNHO`-numerado e `AGUARDANDO_AUTORIZACAO` têm
-títulos diferentes ("Cancelar rascunho" vs. "Cancelar requisição") apesar de terem exatamente
-os mesmos atributos de domínio (`requer_justificativa=False`, `libera_reserva=False`). Como a
-issue pede "lookup variante → copy" (uma dimensão, não um re-mapeamento dos 4 branches de
-estado), esses dois ramos passam a compartilhar a mesma copy ("Cancelar requisição"), com a
-descrição ajustada para cobrir ambos os casos sem citar estoque/reserva. `DESCARTE` mantém
-texto próprio. `CANCELAMENTO` com `libera_reserva=True` mantém o texto atual (menção a
-liberação de reserva). Resultado: 3 entradas de copy (não 4), chave `(variante,
-libera_reserva)`.
+**Preservação de copy (correção pós-review do CodeRabbit na PR do plano):**
+A primeira versão deste plano propunha colapsar `RASCUNHO`-numerado e
+`AGUARDANDO_AUTORIZACAO` na mesma copy porque os dois têm os mesmos atributos de domínio
+(`requer_justificativa=False`, `libera_reserva=False`). O CodeRabbit sinalizou que isso é uma
+mudança de UX não pedida pela issue (#57 é refactor, não redesign) — `CancelamentoInfo`
+carrega só os atributos que **efeitos** de domínio precisam; a granularidade de
+**apresentação** pode ser mais fina que a granularidade de domínio, e a issue não pede
+reduzi-la. Correção: os 4 textos atuais são preservados byte a byte. O `simple_tag` recebe
+`requisicao.estado` como segunda dimensão de lookup (além de `variante`) exatamente para
+preservar essa granularidade sem reintroduzir a árvore `if/elif/else` na view — o dado
+adicional só amplia a chave de um dicionário estático na camada de template, não recria
+lógica de domínio ali. Chave efetiva: `variante` sempre decide `DESCARTE` vs. `CANCELAMENTO`;
+dentro de `CANCELAMENTO`, o dicionário distingue `RASCUNHO` / `AGUARDANDO_AUTORIZACAO` /
+`{AUTORIZADA, PRONTA_PARA_RETIRADA}` (as duas últimas already compartilham texto hoje).
+Resultado: 4 entradas de copy, igual ao comportamento atual — nenhuma mudança de UX.
 
 **O que NÃO muda (fora de escopo):**
 
@@ -74,6 +79,8 @@ libera_reserva)`.
   tabela de copy privada.
 - `apps/requisicoes/templates/requisicoes/detalhe.html` — troca de fonte de copy (2 blocos).
 - `apps/requisicoes/tests/test_transitions.py` — testes de `cancelamento_info` (sem HTTP).
+- `apps/requisicoes/tests/test_templatetags.py` — testes de `cancelamento_copy` (lookup de
+  copy, sem HTTP/render).
 - `apps/requisicoes/tests/test_views.py` — 2 asserts que liam `cancelamento_titulo` passam a
   ler `cancelamento_info.variante`; demais testes de cancelamento continuam válidos porque
   `cancelamento_requer_justificativa` e o HTML renderizado (`'Descartar rascunho' in html`)
@@ -102,6 +109,16 @@ View: os 2 testes que hoje leem `response.context['cancelamento_titulo']` passam
 que HTML renderizado (`'Descartar rascunho' in html`, `'Justificativa do cancelamento' in
 html`) permanece idêntico — nenhuma asserção de texto muda de valor esperado, só de origem.
 
+`cancelamento_copy` (o dicionário de lookup em si) ganha teste direto e novo em
+`test_templatetags.py` (módulo existente, mesmo padrão de `test_get_item`/
+`test_formatar_quantidade`), sem passar por HTTP/template rendering — chama a função
+Python do simple_tag diretamente com `CancelamentoInfo` + `estado` construídos à mão e
+compara o dict retornado com o texto esperado, cobrindo as 4 combinações (`DESCARTE`+
+`RASCUNHO`; `CANCELAMENTO`+`RASCUNHO`; `CANCELAMENTO`+`AGUARDANDO_AUTORIZACAO`;
+`CANCELAMENTO`+`AUTORIZADA`/`PRONTA_PARA_RETIRADA`). Isso cobre o gap apontado pelo
+CodeRabbit: a tabela de copy passa a ter cobertura própria, independente do teste de view
+que só confirma um fragmento de HTML por cenário.
+
 ## Invariants
 
 - Regra de domínio preservada: `requer_justificativa`/`libera_reserva` só `True` a partir de
@@ -114,13 +131,5 @@ html`) permanece idêntico — nenhuma asserção de texto muda de valor esperad
 
 ## Risks
 
-- Risco de regressão visual: a consolidação de copy (rascunho-numerado +
-  aguardando-autorização passam a exibir o mesmo texto "Cancelar requisição") é uma mudança
-  de UX perceptível, ainda que pequena e alinhada ao vocabulário de CONTEXT.md. Documentado
-  aqui para revisão explícita antes da implementação — se o revisor preferir preservar as 4
-  variações textuais exatas, a alternativa é uma chave de lookup composta (`variante` +
-  `requisicao.estado`) em vez de `(variante, libera_reserva)`, o que reintroduziria uma
-  terceira dimensão de estado na tabela de copy (mais próximo do texto atual, mais distante
-  do "lookup por variante" pedido na issue).
 - Sem mudança de schema/migration — não aplica reset de ambiente.
 - Nenhuma dependência de contrato OpenAPI (app é server-rendered, sem DRF).
