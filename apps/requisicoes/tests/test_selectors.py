@@ -724,9 +724,7 @@ def test_filtrar_historico_por_texto_no_criador(
 
 
 @pytest.mark.django_db
-def test_filtrar_historico_por_estado(
-    superuser, req_historico_obras, req_historico_ti
-):
+def test_filtrar_historico_por_estado(superuser, req_historico_obras, req_historico_ti):
     visiveis = historico_requisicoes_visiveis_para(superuser.pk)
     filtrado = filtrar_historico_requisicoes(
         visiveis,

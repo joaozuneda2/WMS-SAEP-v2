@@ -1200,9 +1200,9 @@ def historico_requisicoes_view(request):
         data_fim=data_fim,
         setor=setor,
     )
-    requisicoes = requisicoes.annotate(quantidade_itens=Count('itens')).prefetch_related(
-        'itens__material'
-    )
+    requisicoes = requisicoes.annotate(
+        quantidade_itens=Count('itens')
+    ).prefetch_related('itens__material')
     requisicoes = requisicoes.order_by('criado_em' if ordem == 'asc' else '-criado_em')
 
     paginator = Paginator(requisicoes, PAGINA_HISTORICO_REQUISICOES_TAMANHO)
