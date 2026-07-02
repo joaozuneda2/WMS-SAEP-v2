@@ -152,20 +152,19 @@ def cancelamento_info(requisicao: Requisicao) -> CancelamentoInfo:
         requisicao.estado == EstadoRequisicao.RASCUNHO
         and requisicao.numero_publico is None
     )
-    if not eh_descarte:
-        transicao = TRANSICOES[Operacao.CANCELAR]
-        if requisicao.estado not in transicao.estados_origem:
-            raise EstadoInvalido(
-                'Cancelamento não é permitido no estado atual '
-                f"('{requisicao.get_estado_display()}').",
-                code='estado_origem_invalido',
-            )
-
     if eh_descarte:
         return CancelamentoInfo(
             variante=CancelamentoVariant.DESCARTE,
             requer_justificativa=False,
             libera_reserva=False,
+        )
+
+    transicao = TRANSICOES[Operacao.CANCELAR]
+    if requisicao.estado not in transicao.estados_origem:
+        raise EstadoInvalido(
+            'Cancelamento não é permitido no estado atual '
+            f"('{requisicao.get_estado_display()}').",
+            code='estado_origem_invalido',
         )
 
     pos_autorizacao = requisicao.estado in (
