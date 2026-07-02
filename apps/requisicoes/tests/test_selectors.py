@@ -561,3 +561,74 @@ def test_acoes_disponiveis_retorna_frozenset():
     req = _req(EstadoRequisicao.RASCUNHO, criador_id=ATOR_ID)
 
     assert isinstance(acoes_disponiveis(papel, req), frozenset)
+
+
+@pytest.mark.parametrize(
+    'papel,req,esperado',
+    [
+        pytest.param(
+            _papel(ator_id=ATOR_ID),
+            _req(
+                EstadoRequisicao.RASCUNHO, criador_id=ATOR_ID, beneficiario_id=ATOR_ID
+            ),
+            frozenset(
+                {
+                    Operacao.EDITAR_RASCUNHO,
+                    Operacao.ENVIAR_PARA_AUTORIZACAO,
+                    Operacao.CANCELAR,
+                }
+            ),
+            id='criador_em_rascunho',
+        ),
+        pytest.param(
+            _papel(ator_id=ATOR_ID, setor_chefiado_ativo_id=SETOR_BENEFICIARIO_ID),
+            _req(
+                EstadoRequisicao.AGUARDANDO_AUTORIZACAO,
+                criador_id=999,
+                beneficiario_id=999,
+            ),
+            frozenset({Operacao.RECUSAR, Operacao.AUTORIZAR}),
+            id='chefe_setor_em_aguardando_autorizacao',
+        ),
+        pytest.param(
+            _papel(ator_id=ATOR_ID, eh_almoxarifado=True),
+            _req(EstadoRequisicao.AUTORIZADA, criador_id=999, beneficiario_id=999),
+            frozenset({Operacao.SEPARAR_PARA_RETIRADA, Operacao.CANCELAR}),
+            id='almoxarifado_em_autorizada',
+        ),
+        pytest.param(
+            _papel(ator_id=ATOR_ID, eh_almoxarifado=True),
+            _req(
+                EstadoRequisicao.PRONTA_PARA_RETIRADA,
+                criador_id=999,
+                beneficiario_id=999,
+            ),
+            frozenset({Operacao.REGISTRAR_ATENDIMENTO, Operacao.CANCELAR}),
+            id='almoxarifado_em_pronta_para_retirada',
+        ),
+        pytest.param(
+            _papel(ator_id=ATOR_ID, eh_almoxarifado=True),
+            _req(EstadoRequisicao.ATENDIDA, criador_id=999, beneficiario_id=999),
+            frozenset({Operacao.REGISTRAR_DEVOLUCAO}),
+            id='aux_almoxarifado_em_atendida_sem_estornar',
+        ),
+        pytest.param(
+            _papel(
+                ator_id=ATOR_ID, eh_almoxarifado=True, eh_chefe_de_almoxarifado=True
+            ),
+            _req(EstadoRequisicao.ATENDIDA, criador_id=999, beneficiario_id=999),
+            frozenset({Operacao.REGISTRAR_DEVOLUCAO, Operacao.ESTORNAR}),
+            id='chefe_almoxarifado_em_atendida',
+        ),
+        pytest.param(
+            _papel(ator_id=ATOR_ID),
+            _req(
+                EstadoRequisicao.RECUSADA, criador_id=ATOR_ID, beneficiario_id=ATOR_ID
+            ),
+            frozenset(),
+            id='estado_final_sem_acoes',
+        ),
+    ],
+)
+def test_acoes_disponiveis_conjunto_completo_por_papel_e_estado(papel, req, esperado):
+    assert acoes_disponiveis(papel, req) == esperado

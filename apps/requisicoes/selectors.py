@@ -48,8 +48,9 @@ def acoes_disponiveis(
 
     Deriva de TRANSICOES (a operação é permitida neste estado?) e das policies
     (este papel pode executá-la?), nesta ordem — a tabela nunca codifica
-    autorização (ADR-0011, emenda 2026-06-26). UI, autorização e serviços
-    consomem a mesma fonte, sem duplicar o grafo de estados.
+    autorização (ADR-0011, emenda 2026-06-26). UI e consultas de apresentação
+    consomem esta projeção, sem duplicar o grafo de estados; enforcement
+    continua nos services via exigir_pode_*.
     """
     acoes = set()
     for operacao, transicao in TRANSICOES.items():
