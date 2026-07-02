@@ -8,6 +8,7 @@ import pytest
 
 from apps.accounts.models import Setor, SetorClassificacao, User, VinculoAuxiliar
 from apps.estoque.models import Estoque, Material, SaldoEstoque, UnidadeMedida
+from apps.requisicoes.models import EstadoRequisicao, Requisicao
 
 
 # ---------------------------------------------------------------------------
@@ -261,3 +262,30 @@ def material_disponivel_2(db, estoque_principal):
         saldo_reservado=0,
     )
     return m
+
+
+# ---------------------------------------------------------------------------
+# Requisições para testes de histórico
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def req_historico_obras(db, solicitante, setor_obras):
+    return Requisicao.objects.create(
+        estado=EstadoRequisicao.AGUARDANDO_AUTORIZACAO,
+        numero_publico='REQ-2026-0010',
+        criador=solicitante,
+        beneficiario=solicitante,
+        setor_beneficiario=setor_obras,
+    )
+
+
+@pytest.fixture
+def req_historico_ti(db, usuario_ti, setor_ti):
+    return Requisicao.objects.create(
+        estado=EstadoRequisicao.AUTORIZADA,
+        numero_publico='REQ-2026-0011',
+        criador=usuario_ti,
+        beneficiario=usuario_ti,
+        setor_beneficiario=setor_ti,
+    )
