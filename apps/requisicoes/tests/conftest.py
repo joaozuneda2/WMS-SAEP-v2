@@ -281,11 +281,12 @@ def req_historico_obras(db, solicitante, setor_obras):
 
 
 @pytest.fixture
-def req_historico_ti(db, usuario_ti, setor_ti):
+def req_historico_ti(db, usuario_ti, outro_usuario_obras, setor_ti):
+    """Criador e beneficiário distintos — cobre busca textual por beneficiário."""
     return Requisicao.objects.create(
         estado=EstadoRequisicao.AUTORIZADA,
         numero_publico='REQ-2026-0011',
         criador=usuario_ti,
-        beneficiario=usuario_ti,
+        beneficiario=outro_usuario_obras,
         setor_beneficiario=setor_ti,
     )

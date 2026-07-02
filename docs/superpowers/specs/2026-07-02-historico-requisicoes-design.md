@@ -93,7 +93,7 @@ aplicados em cima do queryset já escopado, exatamente como em
   - `pode_filtrar_historico_por_setor(ator_id) -> bool`
   - `_setores_do_historico(qs) -> list` (setores distintos no queryset escopado, para popular o select de filtro)
 - `apps/requisicoes/policies.py`:
-  - `pode_consultar_historico_requisicoes(papel) -> bool` (almoxarifado ou superusuário)
+  - `pode_consultar_historico_requisicoes(papel) -> bool` (almoxarifado, superusuário ou chefia/auxiliar de setor não-almoxarifado — mesma matriz de `historico_requisicoes_visiveis_para`)
   - `exigir_pode_consultar_historico_requisicoes(papel) -> None`
 - `apps/requisicoes/views.py`:
   - `historico_requisicoes_view` (FBV, `@login_required`, `@require_GET`), estrutura

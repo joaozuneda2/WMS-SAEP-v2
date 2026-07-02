@@ -724,6 +724,24 @@ def test_filtrar_historico_por_texto_no_criador(
 
 
 @pytest.mark.django_db
+def test_filtrar_historico_por_texto_no_beneficiario(
+    superuser, req_historico_obras, req_historico_ti
+):
+    # req_historico_ti tem criador (usuario_ti) e beneficiário (outro_usuario_obras)
+    # distintos — o texto só bate no beneficiário, não no criador.
+    visiveis = historico_requisicoes_visiveis_para(superuser.pk)
+    filtrado = filtrar_historico_requisicoes(
+        visiveis,
+        texto='Maria Obras',
+        estados=[],
+        data_ini=None,
+        data_fim=None,
+        setor=None,
+    )
+    assert set(filtrado.values_list('pk', flat=True)) == {req_historico_ti.pk}
+
+
+@pytest.mark.django_db
 def test_filtrar_historico_por_estado(superuser, req_historico_obras, req_historico_ti):
     visiveis = historico_requisicoes_visiveis_para(superuser.pk)
     filtrado = filtrar_historico_requisicoes(
