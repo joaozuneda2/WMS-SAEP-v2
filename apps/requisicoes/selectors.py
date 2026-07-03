@@ -271,10 +271,13 @@ def historico_requisicoes_visiveis_para(ator_id: int) -> QuerySet[Requisicao]:
     visibilidade de papel sobre requisições de outras pessoas enxerga algo.
 
     RBAC (fronteira de segurança — nunca na view/template):
-    - superuser → tudo, incluindo rascunhos de terceiros.
-    - almoxarifado (chefe ou auxiliar) → tudo, exceto rascunhos de terceiros.
+    - superuser → tudo, incluindo rascunhos (de qualquer um).
+    - almoxarifado (chefe ou auxiliar) → tudo, exceto rascunhos — inclusive
+      o próprio: histórico não é "minhas requisições", rascunho não enviado
+      não aparece aqui mesmo para quem o criou.
     - chefe/aux de setor não-almox → requisições com ``setor_beneficiario``
-      nos setores do ator, exceto rascunhos de terceiros.
+      nos setores do ator, exceto rascunhos (mesma regra: inclusive o
+      próprio rascunho).
     - qualquer outro papel (solicitante puro, sem chefia) ou usuário
       inativo/inexistente → vazio.
     """

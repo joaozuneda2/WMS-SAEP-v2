@@ -93,7 +93,7 @@
                 <tr
                   class="align-top"
                   x-data="{
-                    autorizada: {{ item.quantidade_autorizada|stringformat:'s' }},
+                    autorizada: {{ item.quantidade_autorizada|unlocalize }},
                     entregue: '{{ form.quantidade_entregue.value|unlocalize|default_if_none:'' }}',
                     get parcial() {
                       const a = parseFloat(this.autorizada);

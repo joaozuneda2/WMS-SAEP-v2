@@ -71,7 +71,7 @@ def test_lista_notificacoes_exibe_numero_publico_e_link(
 
 
 @pytest.mark.django_db
-def test_lista_notificacoes_rascunho_ou_inexistente_mostra_fallback(
+def test_lista_notificacoes_requisicao_inexistente_mostra_fallback(
     client_logado, solicitante
 ):
     Notificacao.objects.create(
@@ -81,6 +81,26 @@ def test_lista_notificacoes_rascunho_ou_inexistente_mostra_fallback(
     )
     resp = client_logado.get('/notificacoes/')
     assert resp.status_code == 200
+    html = resp.content.decode('utf-8')
+    assert 'Rascunho' in html
+
+
+@pytest.mark.django_db
+def test_lista_notificacoes_rascunho_real_mostra_fallback(
+    client_logado, solicitante, setor_obras
+):
+    requisicao = Requisicao.objects.create(
+        estado=EstadoRequisicao.RASCUNHO,
+        criador=solicitante,
+        beneficiario=solicitante,
+        setor_beneficiario=setor_obras,
+    )
+    Notificacao.objects.create(
+        destinatario=solicitante,
+        tipo=TipoNotificacao.ATENDIMENTO,
+        requisicao_id=requisicao.pk,
+    )
+    resp = client_logado.get('/notificacoes/')
     html = resp.content.decode('utf-8')
     assert 'Rascunho' in html
 

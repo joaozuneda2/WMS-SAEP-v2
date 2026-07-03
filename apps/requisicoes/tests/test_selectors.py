@@ -706,6 +706,19 @@ def test_historico_almoxarifado_nao_ve_rascunho_de_terceiro(
 
 
 @pytest.mark.django_db
+def test_historico_chefe_setor_nao_ve_proprio_rascunho(chefe_obras, setor_obras):
+    """Histórico não é 'minhas requisições': rascunho próprio também fica de fora."""
+    proprio_rascunho = Requisicao.objects.create(
+        estado=EstadoRequisicao.RASCUNHO,
+        criador=chefe_obras,
+        beneficiario=chefe_obras,
+        setor_beneficiario=setor_obras,
+    )
+    visiveis = historico_requisicoes_visiveis_para(chefe_obras.pk)
+    assert proprio_rascunho.pk not in set(visiveis.values_list('pk', flat=True))
+
+
+@pytest.mark.django_db
 def test_historico_solicitante_puro_vazio(solicitante, req_historico_obras):
     visiveis = historico_requisicoes_visiveis_para(solicitante.pk)
     assert visiveis.count() == 0
