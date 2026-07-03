@@ -1,6 +1,7 @@
 """Testes de views de notificações (ADR-0010)."""
 
 import pytest
+from django.urls import reverse
 
 from apps.notificacoes.models import Notificacao, TipoNotificacao
 from apps.requisicoes.models import EstadoRequisicao, Requisicao
@@ -67,7 +68,7 @@ def test_lista_notificacoes_exibe_numero_publico_e_link(
     html = resp.content.decode('utf-8')
     assert 'REQ-2026-000042' in html
     assert f'Requisição #{requisicao.pk}' not in html
-    assert f'/requisicoes/{requisicao.pk}/' in html
+    assert reverse('requisicoes:detalhe', kwargs={'pk': requisicao.pk}) in html
 
 
 @pytest.mark.django_db
@@ -101,6 +102,7 @@ def test_lista_notificacoes_rascunho_real_mostra_fallback(
         requisicao_id=requisicao.pk,
     )
     resp = client_logado.get('/notificacoes/')
+    assert resp.status_code == 200
     html = resp.content.decode('utf-8')
     assert 'Rascunho' in html
 
