@@ -26,7 +26,6 @@
       max="{{ entregue_liquida }}"
       autocomplete="off"
       value="{{ form.quantidade.value|default_if_none:'' }}"
-      required
       aria-required="true"
       {% if erro %}aria-invalid="true"{% endif %}
       aria-describedby="{% if erro %}{{ id }}-erro{% endif %}"
