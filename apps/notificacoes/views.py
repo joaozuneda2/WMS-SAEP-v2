@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.notificacoes.models import Notificacao
+from apps.notificacoes.selectors import numeros_publicos_por_requisicao
 from apps.notificacoes.services import (
     marcar_notificacao_lida,
     marcar_todas_notificacoes_lidas,
@@ -25,9 +26,14 @@ def _htmx_redirect(request, url: str) -> HttpResponse:
 @login_required
 @require_GET
 def lista_notificacoes_view(request):
-    notificacoes = Notificacao.objects.filter(destinatario=request.user).order_by(
-        '-criado_em'
+    notificacoes = list(
+        Notificacao.objects.filter(destinatario=request.user).order_by('-criado_em')
     )
+    requisicao_ids = [n.requisicao_id for n in notificacoes if n.requisicao_id]
+    numeros_publicos = numeros_publicos_por_requisicao(requisicao_ids)
+    for notificacao in notificacoes:
+        numero = numeros_publicos.get(notificacao.requisicao_id)
+        notificacao.numero_publico_exibicao = numero or 'Rascunho'
     return render(
         request,
         'notificacoes/lista.html',
