@@ -271,10 +271,10 @@ def historico_requisicoes_visiveis_para(ator_id: int) -> QuerySet[Requisicao]:
     visibilidade de papel sobre requisições de outras pessoas enxerga algo.
 
     RBAC (fronteira de segurança — nunca na view/template):
-    - superuser → tudo.
-    - almoxarifado (chefe ou auxiliar) → tudo.
-    - chefe/aux de setor não-almox → só requisições com ``setor_beneficiario``
-      nos setores do ator.
+    - superuser → tudo, incluindo rascunhos de terceiros.
+    - almoxarifado (chefe ou auxiliar) → tudo, exceto rascunhos de terceiros.
+    - chefe/aux de setor não-almox → requisições com ``setor_beneficiario``
+      nos setores do ator, exceto rascunhos de terceiros.
     - qualquer outro papel (solicitante puro, sem chefia) ou usuário
       inativo/inexistente → vazio.
     """
@@ -293,13 +293,15 @@ def historico_requisicoes_visiveis_para(ator_id: int) -> QuerySet[Requisicao]:
     if ator.is_superuser:
         return base_qs
 
+    nao_rascunho = ~Q(estado=EstadoRequisicao.RASCUNHO)
+
     papel = papel_efetivo(ator)
     if papel.eh_almoxarifado:
-        return base_qs
+        return base_qs.filter(nao_rascunho)
 
     setores = list(papel.setores_em_escopo)
     if setores:
-        return base_qs.filter(setor_beneficiario_id__in=setores)
+        return base_qs.filter(setor_beneficiario_id__in=setores).filter(nao_rascunho)
 
     return base_qs.none()
 

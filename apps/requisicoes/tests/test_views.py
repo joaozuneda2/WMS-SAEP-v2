@@ -2784,6 +2784,20 @@ class TestHistoricoRequisicoesView:
         assert response.context['page_obj'].paginator.count == 0
         assert b'Nenhuma requisi' in response.content
 
+    def test_rascunho_de_terceiro_nao_expoe_pk_para_superuser(
+        self, client, superuser, solicitante, setor_obras
+    ):
+        rascunho = Requisicao.objects.create(
+            estado=EstadoRequisicao.RASCUNHO,
+            criador=solicitante,
+            beneficiario=solicitante,
+            setor_beneficiario=setor_obras,
+        )
+        _login(client, superuser)
+        response = client.get(URL_HISTORICO_REQUISICOES)
+        assert f'#{rascunho.pk}'.encode() not in response.content
+        assert b'Rascunho' in response.content
+
     def test_requisicao_htmx_devolve_so_partial(self, client, superuser):
         _login(client, superuser)
         response = client.get(URL_HISTORICO_REQUISICOES, HTTP_HX_REQUEST='true')

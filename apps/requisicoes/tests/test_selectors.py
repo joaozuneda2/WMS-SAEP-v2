@@ -686,6 +686,26 @@ def test_historico_chefe_setor_ve_so_proprio_setor(
 
 
 @pytest.mark.django_db
+def test_historico_chefe_setor_nao_ve_rascunho_de_terceiro(
+    chefe_obras, req_solicitante_rascunho, req_historico_obras
+):
+    visiveis = historico_requisicoes_visiveis_para(chefe_obras.pk)
+    pks = set(visiveis.values_list('pk', flat=True))
+    assert req_solicitante_rascunho.pk not in pks
+    assert req_historico_obras.pk in pks
+
+
+@pytest.mark.django_db
+def test_historico_almoxarifado_nao_ve_rascunho_de_terceiro(
+    chefe_almoxarifado, req_solicitante_rascunho, req_historico_obras
+):
+    visiveis = historico_requisicoes_visiveis_para(chefe_almoxarifado.pk)
+    pks = set(visiveis.values_list('pk', flat=True))
+    assert req_solicitante_rascunho.pk not in pks
+    assert req_historico_obras.pk in pks
+
+
+@pytest.mark.django_db
 def test_historico_solicitante_puro_vazio(solicitante, req_historico_obras):
     visiveis = historico_requisicoes_visiveis_para(solicitante.pk)
     assert visiveis.count() == 0
