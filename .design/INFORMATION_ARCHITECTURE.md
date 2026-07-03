@@ -10,8 +10,9 @@ Cobre o escopo dos três briefs produzidos: login, telas operacionais (listas) e
 /logout/                        → POST logout (accounts:logout)
 
 /requisicoes/
-  minhas/                       → Minhas Requisições (solicitante, aux. setor)
-  nova/                         → Criar nova requisição [fora de escopo atual]
+  minhas/                       → Minhas Requisições (todos os papéis autenticados)
+  nova/                         → Criar nova requisição (todos os papéis autenticados)
+  historico/                    → Histórico de Requisições (aux setor, chefe setor, almoxarifado, superuser)
   autorizacoes/                 → Fila de Autorização (chefe de setor)
   atendimentos/                 → Fila de Atendimentos (aux/chefe almoxarifado)
   <id>/                         → Detalhe da Requisição
@@ -53,12 +54,12 @@ Máximo de 4 links por papel. Links são condicionais — o usuário só vê o q
 
 | Papel | Links visíveis |
 |---|---|
-| Solicitante | Minhas Requisições · Nova Requisição |
-| Auxiliar de setor | Minhas Requisições · Nova Requisição |
-| Chefe de setor | Minhas Requisições · Autorizações |
-| Auxiliar de almoxarifado | Atendimento |
-| Chefe de almoxarifado | Atendimento |
-| Superuser/staff | Admin |
+| Solicitante | Nova requisição · Minhas requisições |
+| Auxiliar de setor | Nova requisição · Minhas requisições · Histórico de requisições |
+| Chefe de setor | Nova requisição · Minhas requisições · Fila de Autorizações · Histórico de requisições |
+| Auxiliar de almoxarifado | Nova requisição · Minhas requisições · Histórico de requisições |
+| Chefe de almoxarifado | Nova requisição · Minhas requisições · Histórico de requisições |
+| Superuser/staff | Nova requisição · Minhas requisições · Fila de Autorizações · Histórico de requisições · Admin |
 
 Usuário com múltiplos papéis: união dos links permitidos.
 
@@ -214,6 +215,7 @@ Labels usadas na interface. Mapeiam os termos do `CONTEXT.md` para o contexto vi
 ```
 /requisicoes/                    → namespace `requisicoes`
 /requisicoes/minhas/             → lista por papel
+/requisicoes/historico/          → histórico system-wide (aux setor, chefe setor, almox, superuser)
 /requisicoes/autorizacoes/       → fila de autorização
 /requisicoes/atendimentos/       → fila de atendimento
 /requisicoes/nova/               → criação
