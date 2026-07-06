@@ -47,6 +47,7 @@ Nenhuma mudança em `views.py`, `models.py`, `selectors.py` ou `services.py` de 
 - Nenhuma mudança de domínio/lógica — apenas copy e um `<span>` de preenchimento.
 - Teste de regressão visual/estrutural via `pytest` existente:
   - `apps/requisicoes/tests/test_views.py` já cobre presença de labels de botão (`'Separar para retirada' in html`, etc.) — não dependem do texto descritivo alterado, seguem passando.
+  - Adicionar em `apps/requisicoes/tests/test_views.py` uma asserção nova (não substituir as existentes) que verifique, no HTML retornado pela view de detalhe, que o parágrafo do card e a `descricao` do modal de pelo menos um bloco reescrito (ex.: `confirmar-retornar`) não são mais idênticos — cobre a regressão de duplicação de copy descrita em B1.
   - Adicionar um teste em `apps/notificacoes/tests/test_views.py` (ou `test_selectors.py`, o que já existir de fixture de notificação sem requisição) confirmando que o `<li>` de uma notificação com `requisicao_id=None` renderiza o `<span>` placeholder (sem quebrar) e que uma notificação com `requisicao_id` continua renderizando o link "Requisição {{ numero }}".
 - Rodar suíte completa: `uv run pytest -q -ra --tb=short --strict-markers --disable-warnings -n logical` — sem regressão esperada.
 
@@ -58,7 +59,7 @@ de notificação.
 
 ## Riscos
 
-- Baixo: mudança textual pura em templates server-rendered, sem JS/Alpine novo, sem migração,
-  sem alteração de contrato OpenAPI (projeto não expõe API REST).
+- Baixo: mudança textual pura em modelos renderizados no servidor, sem JS/Alpine novo, sem
+  migração, sem alteração de contrato OpenAPI (projeto não expõe API REST).
 - Risco de teste frágil: se algum teste existente fizer assert em substring do parágrafo
   descritivo (não só do heading/botão), precisa ajuste — verificado acima, nenhum encontrado.
