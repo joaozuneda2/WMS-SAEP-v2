@@ -21,7 +21,7 @@
 | Arquivo | Achados |
 |---|---|
 | `apps/core/templates/base_auth.html` | M1: flex wrapper, aside sidebar, inner max-w wrapper em main, lg:hidden no hamburger |
-| `apps/core/templates/core/_side_nav_requisicoes.html` | M1: novo partial (Tailwind inline) |
+| `apps/requisicoes/templates/requisicoes/partials/_side_nav_requisicoes.html` | M1: novo partial (Tailwind inline) |
 | `apps/requisicoes/templates/requisicoes/base.html` | M1: block sidebar_nav |
 | `apps/requisicoes/templates/requisicoes/detalhe.html` | M2: remove Atualizada em; M6: reordenar cards |
 | `apps/requisicoes/templates/requisicoes/partials/_estado_badge.html` | M4: split recusada/cancelada |
@@ -72,7 +72,7 @@ Todos em `apps/requisicoes/tests/test_views.py` exceto onde indicado.
 | M3 | `test_historico_material_mostra_nome_secundario_para_item_unico` — req 1 item → "1 item" + nome material | view |
 | M4 | `test_badge_cancelada_cor_diferente_de_recusada` — req cancelada → `bg-orange-100` no HTML; req recusada → `bg-red-200` | view |
 | M5 | `test_atender_retirada_tabela_tem_scroll_shadow` — GET atender → `scroll-shadow-x` no HTML | view |
-| M6 | `test_detalhe_pronta_retirada_registrar_antes_cancelar` — GET detalhe pronta_para_retirada → "Registrar retirada" index < "Cancelar" index em response.content | view |
+| M6 | `test_detalhe_pronta_retirada_registrar_antes_cancelar` — GET detalhe pronta_para_retirada → índice de `id="atender-retirada-titulo"` < índice de `id="cancelamento-titulo"` no HTML (âncoras `aria-labelledby` estáveis, não substring "Cancelar") | view |
 
 ## Invariantes
 

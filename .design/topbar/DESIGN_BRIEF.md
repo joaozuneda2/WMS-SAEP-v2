@@ -106,8 +106,8 @@ CSS custom property `--app-bar-height` permite que `<main>` calcule offset e que
 | **Layout** | Flex no fluxo: wrapper `lg:flex` envolve `<aside>` + `<main>` abaixo do app bar |
 | **Hamburguer em lg+** | Oculto (`lg:hidden`) — drawer continua existindo para mobile/tablet |
 | **Item ativo** | Pill — `bg-slate-100 rounded-md` no item inteiro |
-| **Estilo** | Tailwind inline no novo partial `_side_nav.html` (sem novas classes `@layer`) |
-| **Subtelas em desktop** | Side nav sempre visível — `{% block topbar_menu %}{% endblock %}` só suprime o hamburger, não o side nav |
+| **Estilo** | Tailwind inline no novo partial `_side_nav_requisicoes.html` (sem novas classes `@layer`) |
+| **Subtelas em desktop** | Side nav sempre visível — `{% block topbar_menu %}{% endblock %}` só suprime o hambúrguer, não o side nav |
 | **Conta/logout** | Rodapé do side nav (nome + matrícula + botão Sair) |
 
 #### Estrutura de blocos
@@ -123,7 +123,10 @@ CSS custom property `--app-bar-height` permite que `<main>` calcule offset e que
     {# rodapé: nome + matrícula + logout #}
   </aside>
   <main class="flex-1 min-w-0 ...">
-    {% block content %}{% endblock %}
+    <div class="mx-auto max-w-screen-xl p-6">
+      {% include "core/partials/_messages.html" %}
+      {% block content %}{% endblock %}
+    </div>
   </main>
 </div>
 ```
@@ -132,13 +135,13 @@ CSS custom property `--app-bar-height` permite que `<main>` calcule offset e que
 
 ```django
 {% block sidebar_nav %}
-  {% include "core/_side_nav_requisicoes.html" %}
+  {% include "requisicoes/partials/_side_nav_requisicoes.html" %}
 {% endblock %}
 ```
 
 #### Novos arquivos
 
-- `apps/core/templates/core/_side_nav_requisicoes.html` — seções "Requisições" e "Almoxarifado" com Tailwind inline e mesmas guards de permissão de `_topbar_nav.html`.
+- `apps/requisicoes/templates/requisicoes/partials/_side_nav_requisicoes.html` — seções "Requisições" e "Almoxarifado" com Tailwind inline e mesmas guards de permissão de `_topbar_nav.html`. Partial de domínio vive no app dono (`requisicoes`), não em `core`, conforme ADR-0008.
 
 #### Imutável
 
