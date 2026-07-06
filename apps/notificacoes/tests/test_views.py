@@ -119,7 +119,9 @@ def test_lista_notificacoes_sem_requisicao_preserva_altura_da_linha(
     resp = client_logado.get('/notificacoes/')
     html = resp.content.decode('utf-8')
     assert 'Requisição' not in html
-    assert '<span class="text-xs text-slate-500" aria-hidden="true">&nbsp;</span>' in html
+    assert (
+        '<span class="text-xs text-slate-500" aria-hidden="true">&nbsp;</span>' in html
+    )
 
 
 @pytest.mark.django_db
