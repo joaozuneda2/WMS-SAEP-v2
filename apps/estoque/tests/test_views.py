@@ -63,6 +63,23 @@ class TestListarSaidasExcepcionaisView:
         response = client.get(URL)
         assert response.context['pode_registrar'] is True
 
+    def test_vazia_com_permissao_exibe_cta(self, client, chefe_almoxarifado):
+        client.force_login(chefe_almoxarifado)
+        response = client.get(URL)
+        html = response.content.decode()
+        assert 'border-dashed border-slate-300' in html
+        assert 'Nenhuma saída excepcional registrada' in html
+        assert 'Registre a primeira baixa administrativa direta de material.' in html
+        assert reverse('estoque:nova_saida_excepcional') in html
+
+    def test_vazia_sem_permissao_oculta_cta(self, client, aux_almoxarifado):
+        client.force_login(aux_almoxarifado)
+        response = client.get(URL)
+        html = response.content.decode()
+        assert 'Nenhuma saída excepcional registrada' in html
+        assert 'Não há saídas excepcionais no sistema.' in html
+        assert reverse('estoque:nova_saida_excepcional') not in html
+
 
 URL_NOVA = reverse('estoque:nova_saida_excepcional')
 URL_BUSCAR = reverse('estoque:buscar_materiais_saida_excepcional')
