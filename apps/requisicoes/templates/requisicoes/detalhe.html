@@ -513,30 +513,3 @@
 </div>
 {% endblock %}
 
-{% block extra_scripts %}
-<script>
-  // Anti double-submit: marca botões em submit em curso para evitar duplo POST.
-  // Confirmação agora vive nos modais (modalController), sem dialog nativo.
-  document.querySelectorAll('form[data-prevent-double-submit]').forEach((form) => {
-    form.addEventListener('submit', () => {
-      const targets = Array.from(form.querySelectorAll('button[type="submit"]'));
-      targets.forEach((btn) => {
-        if (btn.dataset.submitting === '1') return;
-        btn.dataset.submitting = '1';
-        btn.setAttribute('aria-busy', 'true');
-        const loading = btn.dataset.submitLoadingLabel;
-        if (loading) {
-          btn.querySelectorAll('[data-submit-text]').forEach((node) => {
-            node.textContent = loading;
-          });
-        }
-      });
-      setTimeout(() => {
-        targets.forEach((btn) => {
-          btn.disabled = true;
-        });
-      }, 0);
-    });
-  });
-</script>
-{% endblock %}
