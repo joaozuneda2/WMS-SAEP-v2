@@ -616,10 +616,12 @@ def test_minhas_vazia_exibe_empty_state_com_cta_canonico(client, solicitante):
     html = response.content.decode()
     assert 'border-dashed border-slate-300' in html
     titulo_idx = html.index('Nenhuma requisição ainda')
-    match = re.search(r'<a\s+href="[^"]*"\s+class="[^"]*"[^>]*>', html[titulo_idx:])
+    match = re.search(r'<a\b[^>]*>', html[titulo_idx:])
     assert match is not None
-    assert 'min-h-11' in match.group()
-    assert 'focus-visible:ring-blue-500' in match.group()
+    tag = match.group()
+    assert re.search(r'href="[^"]*"', tag)
+    assert 'min-h-11' in tag
+    assert 'focus-visible:ring-blue-500' in tag
 
 
 # ---------------------------------------------------------------------------

@@ -793,10 +793,12 @@ class TestListaMateriaisView:
         html = response.content.decode()
         assert 'border-dashed border-slate-300' in html
         titulo_idx = html.index('Nenhum material encontrado para')
-        match = re.search(r'<a\s+href="[^"]*"\s+class="[^"]*"[^>]*>', html[titulo_idx:])
+        match = re.search(r'<a\b[^>]*>', html[titulo_idx:])
         assert match is not None
-        assert 'underline' in match.group()
-        assert 'bg-blue-600' not in match.group()
+        tag = match.group()
+        assert re.search(r'href="[^"]*"', tag)
+        assert 'underline' in tag
+        assert 'bg-blue-600' not in tag
 
     def test_busca_filtra_por_codigo(
         self,
