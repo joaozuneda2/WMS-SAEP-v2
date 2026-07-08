@@ -44,7 +44,7 @@ Diferença de comportamento vs. hoje: `atender_retirada` e `nova_saida_excepcion
 | `apps/requisicoes/templates/requisicoes/rascunho_form.html` | remover bloco inline |
 | `apps/requisicoes/templates/requisicoes/atender_retirada.html` | remover bloco inline |
 | `apps/estoque/templates/estoque/nova_saida_excepcional.html` | remover bloco inline, manter resto do `extra_scripts` (autocomplete combobox) |
-| testes JS (novo, se houver runner) — **projeto não tem test runner JS**; cobertura via testes de integração Django existentes (client) não exercita JS. Verificação primária: manual em browser (critérios de aceite da issue) + suíte Django completa para garantir que nenhum template quebrou render. |
+| testes JS (novo, se houver runner) | **projeto não tem test runner JS**; cobertura via testes de integração Django existentes (client) não exercita JS. Verificação primária: manual no navegador (critérios de aceite da issue) + suíte Django completa para garantir que nenhum modelo quebrou render. |
 
 ## Estratégia de teste
 
