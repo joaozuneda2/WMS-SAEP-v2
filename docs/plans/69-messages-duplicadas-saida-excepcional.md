@@ -25,26 +25,37 @@ Nenhuma outra reimplementação existe no projeto.
 
 - `apps/estoque/templates/estoque/detalhe_saida_excepcional.html` — remove
   linhas 12-27 (bloco `{# Mensagens de sistema #}` + `{% if messages %}...{% endif %}`).
+- `apps/estoque/tests/test_views.py` — em `TestEstornarSaidaExcepcionalView`,
+  novo teste que segue o redirect do estorno e afirma dedup da mensagem no
+  HTML renderizado (ver "Test strategy" abaixo).
 
-Nenhum outro arquivo precisa mudar. Sem mudança de classes Tailwind novas —
-apenas remoção de classes existentes no bloco deletado, então `npm run
-css:build` não é estritamente necessário (nenhuma classe passa a ficar órfã
-em outro lugar, pois eram exclusivas desse bloco). Será rodado por precaução
-e `app.css` incluído no diff apenas se houver diferença real.
+Sem mudança de classes Tailwind novas — apenas remoção de classes existentes
+no bloco deletado, então `npm run css:build` não é estritamente necessário
+(nenhuma classe passa a ficar órfã em outro lugar, pois eram exclusivas desse
+bloco). Será rodado por precaução e `app.css` incluído no diff apenas se
+houver diferença real.
 
 ## Test strategy
 
-Este é um fix de template puro (deduplicação de renderização), sem lógica de
-view/service/policy nova. Cobertura:
+Este é um fix de modelo (template) puro (deduplicação de renderização), sem
+lógica de view/service/policy nova. `TestEstornarSaidaExcepcionalView`
+(`apps/estoque/tests/test_views.py:365`) já cobre `estornar_saida_excepcional`
+com asserções de redirect (302) e presença de mensagem em
+`response.wsgi_request._messages`, mas nenhum teste segue o redirect para
+inspecionar o HTML renderizado — é aí que a duplicação do bug vive.
 
-- **Teste view/template existente**: localizar teste que exercita
-  `detalhe_saida_excepcional` após uma ação que gera `messages.success`
-  (ex.: registrar estorno) e afirmar que a mensagem aparece **uma única vez**
-  no HTML renderizado (contagem de ocorrências da string da mensagem, ou
-  contagem de blocos com `role="status"`/`role="alert"`).
-- Caso não exista teste desse fluxo hoje, adicionar um teste de view mínimo
-  que faz o POST de estorno e verifica contagem == 1 no response content.
-- Não há caminho de erro/policy novo — o fix não introduz branch de decisão.
+Novo teste, seguindo o contrato POST→redirect de `docs/CONVENTIONS.md`:
+
+1. `client.force_login(chefe_almoxarifado)` e POST em
+   `estornar_saida_excepcional` com `justificativa` válida.
+2. **Primeiro** afirmar `response.status_code == 302` e
+   `str(saida_registrada.pk) in response['Location']` (contrato de redirect
+   após POST mutante — igual aos testes vizinhos já existentes).
+3. **Depois**, `client.get(response['Location'])` para renderizar
+   `detalhe_saida_excepcional` e contar ocorrências do texto da mensagem de
+   sucesso (ou de `role="status"`) no `response.content` — deve ser
+   exatamente **1**, não 2.
+4. Não há caminho de erro/policy novo — o fix não introduz branch de decisão.
 
 ## Invariantes (docs/design-acesso-rapido/matriz-invariantes.md)
 
