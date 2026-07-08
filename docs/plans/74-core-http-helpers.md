@@ -19,7 +19,7 @@
 
 ## Decisão técnica: NÃO delegar em `django_htmx.http.HttpResponseClientRedirect`
 
-A issue pede para "avaliar" a delegação. Inspecionado `django_htmx/http.py` (pacote instalado, `.venv/lib/python3.14/site-packages/django_htmx/http.py:32-47`):
+A issue pede para "avaliar" a delegação. Inspecionado o código-fonte de `django_htmx.http` (versão instalada via `pyproject.toml`):
 
 ```python
 class HttpResponseClientRedirect(HttpResponseRedirectBase):
