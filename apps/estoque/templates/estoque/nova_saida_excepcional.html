@@ -423,32 +423,5 @@
       };
     };
   })();
-
-  // Anti double-submit — mesma lógica do rascunho_form
-  document.querySelectorAll('form[data-prevent-double-submit]').forEach((form) => {
-    let submitter = null;
-    form.querySelectorAll('button[type="submit"]').forEach((btn) => {
-      btn.addEventListener('click', () => { submitter = btn; });
-    });
-    form.addEventListener('submit', () => {
-      const targets = submitter
-        ? [submitter]
-        : Array.from(form.querySelectorAll('button[type="submit"]'));
-      targets.forEach((btn) => {
-        if (btn.dataset.submitting === '1') return;
-        btn.dataset.submitting = '1';
-        btn.setAttribute('aria-busy', 'true');
-        const loading = btn.dataset.submitLoadingLabel;
-        if (loading) {
-          btn.querySelectorAll('[data-submit-text]').forEach((node) => {
-            node.textContent = loading;
-          });
-        }
-      });
-      setTimeout(() => {
-        targets.forEach((btn) => { btn.disabled = true; });
-      }, 0);
-    });
-  });
 </script>
 {% endblock %}

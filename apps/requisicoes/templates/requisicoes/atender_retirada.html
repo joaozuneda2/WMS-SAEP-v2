@@ -297,30 +297,3 @@
 </div>
 {% endblock %}
 
-{% block extra_scripts %}
-<script>
-  document.querySelectorAll('form[data-prevent-double-submit]').forEach((form) => {
-    form.addEventListener('submit', () => {
-      const targets = Array.from(form.querySelectorAll('button[type="submit"], button[data-modal-confirm]'));
-      targets.forEach((btn) => {
-        if (btn.dataset.submitting === '1') return;
-        btn.dataset.submitting = '1';
-        btn.setAttribute('aria-busy', 'true');
-        btn.classList.add('pointer-events-none', 'cursor-wait');
-        btn.querySelectorAll('[data-submit-spinner]').forEach((node) => {
-          node.classList.remove('hidden');
-        });
-        const loading = btn.dataset.submitLoadingLabel;
-        if (loading) {
-          btn.querySelectorAll('[data-submit-text]').forEach((node) => {
-            node.textContent = loading;
-          });
-        }
-      });
-      setTimeout(() => {
-        targets.forEach((btn) => { btn.disabled = true; });
-      }, 0);
-    });
-  });
-</script>
-{% endblock %}
