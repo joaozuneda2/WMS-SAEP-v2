@@ -608,6 +608,19 @@ def test_minhas_renderiza_numero_publico_e_fallback_rascunho(
     assert 'Rascunho' in html
 
 
+@pytest.mark.django_db
+def test_minhas_vazia_exibe_empty_state_com_cta_canonico(client, solicitante):
+    _login(client, solicitante)
+    response = client.get(reverse('requisicoes:minhas'))
+    html = response.content.decode()
+    assert 'border-dashed border-slate-300' in html
+    titulo_idx = html.index('Nenhuma requisição ainda')
+    cta_idx = html.index(reverse('requisicoes:nova_requisicao'), titulo_idx)
+    cta_html = html[cta_idx - 100 : cta_idx + 300]
+    assert 'min-h-11' in cta_html
+    assert 'focus-visible:ring-blue-500' in cta_html
+
+
 # ---------------------------------------------------------------------------
 # Detalhe da requisição
 # ---------------------------------------------------------------------------
