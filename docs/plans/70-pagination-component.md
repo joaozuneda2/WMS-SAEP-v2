@@ -1,8 +1,8 @@
-# Plano — #70 components/pagination.html
+# Plano — issue 70 components/pagination.html
 
 ## Épico
 
-#68 — Fase 1 (fundações, alto ROI/baixo risco).
+Issue 68 — Fase 1 (fundações, alto ROI/baixo risco).
 
 ## Escopo
 
