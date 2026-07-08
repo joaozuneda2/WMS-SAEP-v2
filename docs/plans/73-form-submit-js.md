@@ -27,12 +27,11 @@ Delegação de evento em `document` (funciona com HTMX swap sem re-bind manual):
    - por alvo: se já `dataset.submitting === '1'`, pula (idempotência/guard contra doble bind).
    - seta `dataset.submitting = '1'`, `aria-busy="true"`.
    - troca texto: `querySelectorAll('[data-submit-text]')` recebe `dataset.submitLoadingLabel` quando presente.
-   - se existir `[data-submit-spinner]` dentro do alvo, remove `hidden`.
-   - adiciona `pointer-events-none`, `cursor-wait` no alvo (comportamento de `atender_retirada`, generalizado — inofensivo nos demais casos pois são classes puramente visuais sem CSS novo).
+   - se existir `[data-submit-spinner]` dentro do alvo: remove `hidden` do spinner **e** só então adiciona `pointer-events-none`, `cursor-wait` no alvo (comportamento de `atender_retirada`, restrito à presença de spinner — igual ao original, sem generalizar para os demais formulários).
    - `setTimeout(() => alvo.disabled = true, 0)` — deferido para não descartar `name=acao` do submitter no `FormData` do submit em andamento.
 3. **Inicialização**: listeners registrados uma vez em `DOMContentLoaded` (idempotente — módulo IIFE com guard), delegados em `document`, portanto cobrem formulários renderizados depois via HTMX (`hx-swap` de fragmentos) sem necessidade de `htmx:afterSwap`.
 
-Diferença de comportamento vs. hoje: `atender_retirada` e `nova_saida_excepcional`/`rascunho_form` não tinham `pointer-events-none`/`cursor-wait`/spinner-reveal simultaneamente com rastreio de submitter — o superset une as duas capacidades, mas como cada comportamento só ativa condicionalmente (presença de `data-*`/classe), nenhum formulário existente muda de aparência: `detalhe.html` e `rascunho_form.html` não têm `[data-submit-spinner]`, então o toggle de spinner é no-op; a classe `pointer-events-none cursor-wait` é adicionada em todos agora (regressão cosmética mínima — botão fica com cursor "wait" em vez de "not-allowed" padrão do disabled, aceitável e não listado em "fora de escopo" como proibido; caso CodeRabbit objete, restringir à presença de `[data-submit-spinner]` como no original).
+Diferença de comportamento vs. hoje: nenhuma. `pointer-events-none`/`cursor-wait`/spinner-reveal permanecem condicionados à presença de `[data-submit-spinner]` (só `atender_retirada` hoje), exatamente como no código atual. `detalhe.html`, `rascunho_form.html` e `nova_saida_excepcional.html` não têm `[data-submit-spinner]`, então esse trecho é no-op para eles — consistente com a promessa de "Não muda" (UX de loading).
 
 ## Arquivos tocados
 
