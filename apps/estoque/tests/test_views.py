@@ -773,6 +773,29 @@ class TestListaMateriaisView:
         response = client.get(URL_MATERIAIS)
         assert response.context['busca'] == ''
 
+    def test_nenhum_material_cadastrado_exibe_empty_state_dashed(
+        self, client, chefe_almoxarifado
+    ):
+        client.force_login(chefe_almoxarifado)
+        response = client.get(URL_MATERIAIS)
+        html = response.content.decode()
+        assert 'border-dashed border-slate-300' in html
+        assert 'border-slate-200 bg-white p-8' not in html
+        assert 'Nenhum material cadastrado no estoque.' in html
+
+    def test_busca_sem_resultado_exibe_cta_secundario_link(
+        self, client, chefe_almoxarifado
+    ):
+        client.force_login(chefe_almoxarifado)
+        response = client.get(URL_MATERIAIS, {'busca': 'inexistente-xyz'})
+        html = response.content.decode()
+        assert 'border-dashed border-slate-300' in html
+        titulo_idx = html.index('Nenhum material encontrado para')
+        cta_idx = html.index(reverse('estoque:lista_materiais'), titulo_idx)
+        cta_html = html[cta_idx - 100 : cta_idx + 200]
+        assert 'underline' in cta_html
+        assert 'bg-blue-600' not in cta_html
+
     def test_busca_filtra_por_codigo(
         self,
         client,
