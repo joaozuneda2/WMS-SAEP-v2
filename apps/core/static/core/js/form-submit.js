@@ -14,7 +14,11 @@
  *   para formulários sem spinner);
  * - `disabled` é aplicado com `setTimeout(0)`: se fosse síncrono, o clique
  *   no botão desabilitado descartaria seu `name=valor` do FormData antes do
- *   browser terminar de montar o submit.
+ *   browser terminar de montar o submit;
+ * - o bloqueio é por `form`, não por botão: um segundo submit disparado por
+ *   outro botão do mesmo form (ex. clique rápido em "Salvar rascunho" logo
+ *   seguido de "Criar e enviar") é descartado via `preventDefault` enquanto
+ *   o primeiro submit está em andamento.
  *
  * Delegação de eventos em `document` — cobre formulários renderizados
  * depois via HTMX (fragmentos trocados por hx-swap) sem precisar de rebind
@@ -54,14 +58,16 @@
       return;
     }
 
+    if (form.dataset.submitting === '1') {
+      event.preventDefault();
+      return;
+    }
+    form.dataset.submitting = '1';
+
     const submitter = submitters.get(form);
     const targets = submitter ? [submitter] : alvosDoForm(form);
 
     targets.forEach((btn) => {
-      if (btn.dataset.submitting === '1') {
-        return;
-      }
-      btn.dataset.submitting = '1';
       btn.setAttribute('aria-busy', 'true');
 
       const loading = btn.dataset.submitLoadingLabel;
