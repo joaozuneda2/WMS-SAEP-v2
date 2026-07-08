@@ -8,13 +8,13 @@ filtros ativos ao navegar. Alvos de toque min-h-11, focáveis.
 {% if page_obj.paginator.num_pages > 1 %}
   <nav
     class="mt-6 flex items-center justify-between gap-3"
-    aria-label="{{ aria_label }}"
+    aria-label="{{ aria_label|default:'Paginação' }}"
   >
     <p class="text-sm text-slate-600">
       Página <span class="font-medium tabular-nums">{{ page_obj.number }}</span>
       de <span class="font-medium tabular-nums">{{ page_obj.paginator.num_pages }}</span>
       <span class="text-slate-400">·</span>
-      <span class="tabular-nums">{{ page_obj.paginator.count }}</span> {{ rotulo_itens }}
+      <span class="tabular-nums">{{ page_obj.paginator.count }}</span> {{ rotulo_itens|default:'itens' }}
     </p>
 
     <div class="flex items-center gap-2">
