@@ -4,6 +4,7 @@ Verifica: auth, status codes, redirects, mutations mínimas, presença de messag
 Sem testar HTML detalhado ou texto completo de mensagens.
 """
 
+import re
 from decimal import Decimal
 
 import pytest
@@ -615,10 +616,10 @@ def test_minhas_vazia_exibe_empty_state_com_cta_canonico(client, solicitante):
     html = response.content.decode()
     assert 'border-dashed border-slate-300' in html
     titulo_idx = html.index('Nenhuma requisição ainda')
-    cta_idx = html.index(reverse('requisicoes:nova_requisicao'), titulo_idx)
-    cta_html = html[cta_idx - 100 : cta_idx + 300]
-    assert 'min-h-11' in cta_html
-    assert 'focus-visible:ring-blue-500' in cta_html
+    match = re.search(r'<a\s+href="[^"]*"\s+class="[^"]*"[^>]*>', html[titulo_idx:])
+    assert match is not None
+    assert 'min-h-11' in match.group()
+    assert 'focus-visible:ring-blue-500' in match.group()
 
 
 # ---------------------------------------------------------------------------

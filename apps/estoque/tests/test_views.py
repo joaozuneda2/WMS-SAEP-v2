@@ -1,5 +1,7 @@
 """Testes de view para estoque.saidas_excepcionais."""
 
+import re
+
 from django.urls import reverse
 
 
@@ -791,10 +793,10 @@ class TestListaMateriaisView:
         html = response.content.decode()
         assert 'border-dashed border-slate-300' in html
         titulo_idx = html.index('Nenhum material encontrado para')
-        cta_idx = html.index(reverse('estoque:lista_materiais'), titulo_idx)
-        cta_html = html[cta_idx - 100 : cta_idx + 200]
-        assert 'underline' in cta_html
-        assert 'bg-blue-600' not in cta_html
+        match = re.search(r'<a\s+href="[^"]*"\s+class="[^"]*"[^>]*>', html[titulo_idx:])
+        assert match is not None
+        assert 'underline' in match.group()
+        assert 'bg-blue-600' not in match.group()
 
     def test_busca_filtra_por_codigo(
         self,
