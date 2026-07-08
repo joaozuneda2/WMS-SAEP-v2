@@ -1,0 +1,38 @@
+{% comment %}
+Estado vazio reutilizável. Recebe `titulo` (obrigatório), `descricao`
+(opcional), `icone` (opcional — caminho de partial contendo apenas o
+`<path>` do SVG) e `cta_url`/`cta_label` (opcionais). Por padrão o CTA
+renderiza como botão primário; `cta_secundario=True` renderiza como link
+sublinhado. Nenhum condicional de domínio aqui — quem chama já resolve
+títulos/descrições/flags antes do include.
+{% endcomment %}
+<div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+  {% if icone %}
+    <svg class="mx-auto mb-4 h-10 w-10 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      {% include icone %}
+    </svg>
+  {% endif %}
+  <h2 class="text-base font-medium text-slate-700">{{ titulo }}</h2>
+  {% if descricao %}
+    <p class="mt-1 text-sm text-slate-500">{{ descricao }}</p>
+  {% endif %}
+  {% if cta_url and cta_label %}
+    {% if cta_secundario %}
+      <a
+        href="{{ cta_url }}"
+        class="mt-3 inline-block rounded text-sm text-blue-600 underline hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      >
+        {{ cta_label }}
+      </a>
+    {% else %}
+      <div class="mt-6">
+        <a
+          href="{{ cta_url }}"
+          class="inline-flex min-h-11 items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        >
+          {{ cta_label }}
+        </a>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>

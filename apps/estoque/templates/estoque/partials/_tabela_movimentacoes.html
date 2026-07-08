@@ -99,18 +99,11 @@ Contexto: page_obj, tem_filtro_ativo, ordem, aria_sort, url_ordenacao, querystri
 {% else %}
 
   {# Empty state contextual: filtro sem resultado vs ledger visível vazio #}
-  <div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-    <svg class="mx-auto mb-4 h-10 w-10 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/>
-    </svg>
-    {% if tem_filtro_ativo %}
-      <h2 class="text-base font-medium text-slate-700">Nenhum resultado para este filtro</h2>
-      <p class="mt-1 text-sm text-slate-500">Ajuste ou limpe os filtros para ver mais movimentações.</p>
-    {% else %}
-      <h2 class="text-base font-medium text-slate-700">Nenhuma movimentação encontrada</h2>
-      <p class="mt-1 text-sm text-slate-500">Ainda não há movimentações de estoque visíveis para o seu papel.</p>
-    {% endif %}
-  </div>
+  {% if tem_filtro_ativo %}
+    {% include 'components/empty_state.html' with icone='components/icons/_seta_circular.html' titulo='Nenhum resultado para este filtro' descricao='Ajuste ou limpe os filtros para ver mais movimentações.' %}
+  {% else %}
+    {% include 'components/empty_state.html' with icone='components/icons/_seta_circular.html' titulo='Nenhuma movimentação encontrada' descricao='Ainda não há movimentações de estoque visíveis para o seu papel.' %}
+  {% endif %}
 
 {% endif %}
 

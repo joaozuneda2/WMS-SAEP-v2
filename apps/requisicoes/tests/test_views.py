@@ -4,6 +4,7 @@ Verifica: auth, status codes, redirects, mutations mínimas, presença de messag
 Sem testar HTML detalhado ou texto completo de mensagens.
 """
 
+import re
 from decimal import Decimal
 
 import pytest
@@ -606,6 +607,21 @@ def test_minhas_renderiza_numero_publico_e_fallback_rascunho(
     html = response.content.decode()
     assert 'REQ-2026-0010' in html
     assert 'Rascunho' in html
+
+
+@pytest.mark.django_db
+def test_minhas_vazia_exibe_empty_state_com_cta_canonico(client, solicitante):
+    _login(client, solicitante)
+    response = client.get(reverse('requisicoes:minhas'))
+    html = response.content.decode()
+    assert 'border-dashed border-slate-300' in html
+    titulo_idx = html.index('Nenhuma requisição ainda')
+    match = re.search(r'<a\b[^>]*>', html[titulo_idx:])
+    assert match is not None
+    tag = match.group()
+    assert re.search(r'href="[^"]*"', tag)
+    assert 'min-h-11' in tag
+    assert 'focus-visible:ring-blue-500' in tag
 
 
 # ---------------------------------------------------------------------------

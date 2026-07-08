@@ -1,5 +1,7 @@
 """Testes de view para estoque.saidas_excepcionais."""
 
+import re
+
 from django.urls import reverse
 
 
@@ -62,6 +64,23 @@ class TestListarSaidasExcepcionaisView:
         client.force_login(superuser)
         response = client.get(URL)
         assert response.context['pode_registrar'] is True
+
+    def test_vazia_com_permissao_exibe_cta(self, client, chefe_almoxarifado):
+        client.force_login(chefe_almoxarifado)
+        response = client.get(URL)
+        html = response.content.decode()
+        assert 'border-dashed border-slate-300' in html
+        assert 'Nenhuma saída excepcional registrada' in html
+        assert 'Registre a primeira baixa administrativa direta de material.' in html
+        assert reverse('estoque:nova_saida_excepcional') in html
+
+    def test_vazia_sem_permissao_oculta_cta(self, client, aux_almoxarifado):
+        client.force_login(aux_almoxarifado)
+        response = client.get(URL)
+        html = response.content.decode()
+        assert 'Nenhuma saída excepcional registrada' in html
+        assert 'Não há saídas excepcionais no sistema.' in html
+        assert reverse('estoque:nova_saida_excepcional') not in html
 
 
 URL_NOVA = reverse('estoque:nova_saida_excepcional')
@@ -755,6 +774,31 @@ class TestListaMateriaisView:
         client.force_login(chefe_almoxarifado)
         response = client.get(URL_MATERIAIS)
         assert response.context['busca'] == ''
+
+    def test_nenhum_material_cadastrado_exibe_empty_state_dashed(
+        self, client, chefe_almoxarifado
+    ):
+        client.force_login(chefe_almoxarifado)
+        response = client.get(URL_MATERIAIS)
+        html = response.content.decode()
+        assert 'border-dashed border-slate-300' in html
+        assert 'border-slate-200 bg-white p-8' not in html
+        assert 'Nenhum material cadastrado no estoque.' in html
+
+    def test_busca_sem_resultado_exibe_cta_secundario_link(
+        self, client, chefe_almoxarifado
+    ):
+        client.force_login(chefe_almoxarifado)
+        response = client.get(URL_MATERIAIS, {'busca': 'inexistente-xyz'})
+        html = response.content.decode()
+        assert 'border-dashed border-slate-300' in html
+        titulo_idx = html.index('Nenhum material encontrado para')
+        match = re.search(r'<a\b[^>]*>', html[titulo_idx:])
+        assert match is not None
+        tag = match.group()
+        assert re.search(r'href="[^"]*"', tag)
+        assert 'underline' in tag
+        assert 'bg-blue-600' not in tag
 
     def test_busca_filtra_por_codigo(
         self,

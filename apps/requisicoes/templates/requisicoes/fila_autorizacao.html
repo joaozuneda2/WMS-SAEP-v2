@@ -97,10 +97,7 @@
       </table>
     </div>
   {% else %}
-    <div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <h2 class="text-base font-medium text-slate-700">Nenhuma requisição aguardando autorização</h2>
-      <p class="mt-1 text-sm text-slate-500">A fila do seu escopo está vazia.</p>
-    </div>
+    {% include 'components/empty_state.html' with titulo='Nenhuma requisição aguardando autorização' descricao='A fila do seu escopo está vazia.' %}
   {% endif %}
 
 </div>

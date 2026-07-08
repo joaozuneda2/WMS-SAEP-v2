@@ -119,10 +119,7 @@
       </table>
     </div>
   {% else %}
-    <div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <h2 class="text-base font-medium text-slate-700">Nenhuma requisição aguardando atendimento</h2>
-      <p class="mt-1 text-sm text-slate-500">A fila do almoxarifado está vazia.</p>
-    </div>
+    {% include 'components/empty_state.html' with titulo='Nenhuma requisição aguardando atendimento' descricao='A fila do almoxarifado está vazia.' %}
   {% endif %}
 
 </div>

@@ -115,16 +115,8 @@
       </table>
     </div>
   {% else %}
-    <div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <h2 class="text-base font-medium text-slate-700">Nenhuma requisição ainda</h2>
-      <p class="mt-1 text-sm text-slate-500">Você ainda não criou requisições nem foi indicado como beneficiário.</p>
-      <a
-        href="{% url 'requisicoes:nova_requisicao' %}"
-        class="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        Nova requisição
-      </a>
-    </div>
+    {% url 'requisicoes:nova_requisicao' as cta_nova_requisicao_url %}
+    {% include 'components/empty_state.html' with titulo='Nenhuma requisição ainda' descricao='Você ainda não criou requisições nem foi indicado como beneficiário.' cta_url=cta_nova_requisicao_url cta_label='Nova requisição' %}
   {% endif %}
 
 </div>
