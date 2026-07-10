@@ -1,0 +1,79 @@
+"""Testes diretos de components/alert.html (sem DB, sem view)."""
+
+import pytest
+from django.template.loader import render_to_string
+
+
+def _render(**ctx):
+    ctx.setdefault('message', 'Mensagem de teste')
+    return render_to_string('components/alert.html', ctx)
+
+
+def test_variant_padrao_info_usa_role_status():
+    html = _render()
+    assert 'role="status"' in html
+    assert 'border-blue-200' in html
+    assert 'bg-blue-50' in html
+    assert 'text-blue-800' in html
+
+
+@pytest.mark.parametrize(
+    'variant,role_esperado,classes_esperadas',
+    [
+        ('success', 'status', ['border-green-200', 'bg-green-50', 'text-green-800']),
+        ('warning', 'alert', ['border-amber-200', 'bg-amber-50', 'text-amber-800']),
+        ('danger', 'alert', ['border-red-200', 'bg-red-50', 'text-red-800']),
+    ],
+)
+def test_variante_define_role_e_cor(variant, role_esperado, classes_esperadas):
+    html = _render(variant=variant)
+    assert f'role="{role_esperado}"' in html
+    for classe in classes_esperadas:
+        assert classe in html
+
+
+def test_role_override_sobrescreve_padrao_da_variante():
+    html = _render(variant='warning', role='note')
+    assert 'role="note"' in html
+    assert 'role="alert"' not in html
+
+
+def test_icone_e_exibido_por_padrao():
+    html = _render()
+    assert '<svg' in html
+
+
+def test_icone_false_oculta_svg():
+    html = _render(icone=False)
+    assert '<svg' not in html
+
+
+def test_message_e_autoescapado():
+    html = _render(message='<script>alert(1)</script>')
+    assert '<script>' not in html
+    assert '&lt;script&gt;' in html
+
+
+def test_body_template_inclui_conteudo_e_herda_contexto():
+    html = render_to_string(
+        'components/alert.html',
+        {'variant': 'danger', 'body_template': 'components/icons/_check.html'},
+    )
+    assert 'aria-hidden="true"' in html
+
+
+def test_class_passthrough_e_mesclado_nao_substitui_invariantes():
+    html = _render(**{'class': 'meu-ajuste-customizado'})
+    assert 'meu-ajuste-customizado' in html
+    assert 'rounded-lg' in html
+    assert 'px-4 py-3' in html
+
+
+def test_aria_live_ausente_por_padrao():
+    html = _render()
+    assert 'aria-live' not in html
+
+
+def test_aria_live_explicito_renderiza_atributo():
+    html = _render(aria_live='assertive')
+    assert 'aria-live="assertive"' in html
