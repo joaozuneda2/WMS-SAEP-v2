@@ -436,14 +436,17 @@ Render: `<span>` compacto com cor e label
 
 Parâmetros:
 ```
-variant   (slate, blue, amber, green, red, teal)
-label     (obrigatório)
+variant     (slate, blue, blue-strong, amber, amber-strong, green, red,
+             red-strong, orange, teal, indigo, violet, yellow)
+label       (obrigatório)
+role        (opcional — propagado literalmente como role="{{ role }}")
+aria_label  (opcional — propagado literalmente como aria-label="{{ aria_label }}")
 ```
 
 Comportamento:
 - Não conhece estados de requisição
 - Baseado apenas em variante visual
-- Partial de domínio mapeia estado → variant
+- Partial de domínio mapeia estado → variant, e decide `role`/`aria_label` (ex. `role="status"` para estados de listagem)
 
 ### 6. page_header.html
 

@@ -14,7 +14,7 @@ Issue #68 (Fase 1 — fundações)
 
 **Não muda:** mapa semântico cor↔estado, views, services/policies/selectors, tokens semânticos.
 
-**`status_badge.html` vs `badge.html`:** `docs/design-system.md` (§Inventário inicial) planejava o nome `status_badge.html`, mas nenhum arquivo com esse nome existe no repositório — é só um nome de inventário, nunca implementado. A issue #72 nomeia o componente real como `badge.html`; não há dois contratos concorrentes. Este plano atualiza as duas menções de `status_badge.html` em `docs/design-system.md` para `badge.html` como parte da entrega, eliminando a divergência de nome na documentação.
+**`status_badge.html` vs `badge.html`:** `docs/design-system.md` (§Inventário inicial) planejava o nome `status_badge.html`, mas nenhum arquivo com esse nome existe no repositório — é só um nome de inventário, nunca implementado. A issue #72 nomeia o componente real como `badge.html`; não há dois contratos concorrentes. Este plano atualiza as seis menções de `status_badge.html` em `docs/design-system.md` (linhas 287, 331, 346, título da §5, e os dois exemplos de `{% include %}` em §Exemplos de uso) para `badge.html` como parte da entrega, eliminando a divergência de nome na documentação.
 
 ## Contrato ARIA de `badge.html`
 
@@ -84,9 +84,9 @@ Modelos puros (sem lógica Python nova) — sem testes unitários de service/vie
 | `ruff format . && ruff check .` | Saída limpa (nenhum `.py` é tocado, mas roda para confirmar zero regressão acidental). |
 | `uv run mypy apps` | Saída limpa — mesma razão acima; nenhuma mudança de tipo esperada. |
 | `uv run pytest -q -ra --tb=short --strict-markers --disable-warnings -n logical` | Suíte 100% verde, contagem de passes igual à baseline pré-mudança (nenhuma view/model muda). |
-| `npm run css:build` | Roda sem erro; `apps/core/static/core/css/app.css` aparece no diff com as novas classes de `badge.html` compiladas; nenhuma classe órfã (grep por `bg-{cor}-{100,200}.*ring-{cor}-{200,300}` de cada variante presente no CSS gerado). |
-| Contraste WCAG AA | Cada par fundo-100/texto-900 (e fundo-200/texto-900) usado nas 13 variantes já é o mesmo par documentado como AA-compliant em `_badge_tipo_movimentacao.html`; conferir com ferramenta de contraste (ex. DevTools) pelo menos 1 variante nova (`amber-strong`) e 1 normalizada (`teal`) como amostra — razão de contraste ≥ 4.5:1. |
-| Verificação manual no navegador | Checklist da issue: minhas requisições, filas (atendimento/autorização), histórico, saídas excepcionais (lista+detalhe), catálogo, importação SCPI (histórico+preview) — 8 telas, sem regressão visual fora do documentado em "Normalização". |
+| `npm run css:build` | Roda sem erro; `apps/core/static/core/css/app.css` aparece no diff. Confirmar presença de todas as classes literais das 13 variantes no CSS gerado: `bg-slate-100`/`ring-slate-200`, `bg-blue-100`/`ring-blue-200`, `bg-blue-200`/`ring-blue-300`, `bg-amber-100`/`ring-amber-200`, `bg-amber-200`/`ring-amber-300`, `bg-green-100`/`ring-green-200`, `bg-red-100`/`ring-red-200`, `bg-red-200`/`ring-red-300`, `bg-orange-100`/`ring-orange-200`, `bg-teal-100`/`ring-teal-200`, `bg-indigo-100`/`ring-indigo-200`, `bg-violet-100`/`ring-violet-200`, `bg-yellow-100`/`ring-yellow-200` — nenhuma ausente. |
+| Contraste WCAG AA | Verificar com ferramenta de contraste (ex. DevTools) as 13 variantes, cobrindo os dois pares usados (`fundo-100/texto-900` e `fundo-200/texto-900`, ambos já documentados como AA-compliant em `_badge_tipo_movimentacao.html`) e a legibilidade do `ring` sobre o fundo — razão de contraste texto/fundo ≥ 4.5:1 em cada uma das 13. |
+| Verificação manual no navegador | Checklist da issue, 9 telas: minhas requisições, fila de atendimento, fila de autorização, histórico de requisições, lista de saídas excepcionais, detalhe de saída excepcional, catálogo de materiais, histórico de importações SCPI, preview de importação SCPI — sem regressão visual fora do documentado em "Normalização". |
 | Diff ARIA | Conferência atributo a atributo dos 34 pontos de `role`/`aria-label` contra o estado antes da migração (ver "Contrato ARIA" acima) — zero divergência não documentada. |
 
 ## Invariantes (docs/design-acesso-rapido/matriz-invariantes.md)
