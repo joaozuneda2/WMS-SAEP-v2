@@ -36,7 +36,27 @@ hx_get/hx_post/hx_target/hx_swap  opcionais — passthrough HTMX literal (sem us
 data_modal_trigger opcional — passthrough para abertura de modal via Alpine
 ```
 
-13 parâmetros nominais, acima do guia de "~10" da issue. Não há decisão errada de abstração aqui — os itens acima (exceto `hx_*`/`icon_template`/`data_modal_trigger`, sem uso nesta fatia) são requisitos explícitos do corpo da issue #76, não inferência própria. Registrar isso no PR conforme pedido no critério de aceite ("se precisar de mais, parar e registrar no PR").
+15 parâmetros nominais (`variant`, `size`, `type`, `label`, `href`, `disabled`, `icon_template`, `full_width_mobile`, `aria_label`, `class`, `hx_get`, `hx_post`, `hx_target`, `hx_swap`, `data_modal_trigger`), acima do guia de "~10" da issue. Não há decisão errada de abstração aqui — os itens acima (exceto `hx_*`/`icon_template`/`data_modal_trigger`, sem uso nesta fatia) são requisitos explícitos do corpo da issue #76, não inferência própria. Registrar isso no PR conforme pedido no critério de aceite ("se precisar de mais, parar e registrar no PR").
+
+### Classes literais por variant × size
+
+Tabela de referência para implementação e testes (todas as classes abaixo se somam às invariantes comuns da seção seguinte):
+
+| variant | classes de cor/estado |
+|---|---|
+| primary | `bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus-visible:ring-blue-500` |
+| secondary | `bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-blue-500` |
+| danger | `bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500` |
+| danger-outline | `bg-white text-red-700 border border-red-300 hover:bg-red-50 focus-visible:ring-red-500` |
+| ghost | `bg-transparent text-slate-700 hover:bg-slate-100 focus-visible:ring-blue-500` |
+| link | `bg-transparent text-blue-700 hover:underline focus-visible:ring-blue-500 min-h-0` (link não força `min-h-11`/`justify-center` — não é um alvo de toque no sentido dos demais variants, segue o padrão já usado em `empty_state.html` para `cta_secundario`) |
+
+| size | classes de padding/tipografia |
+|---|---|
+| sm | `px-3 py-1.5 text-xs` |
+| md (default) | `px-3 py-2 text-sm` |
+
+`full_width_mobile=True` soma `w-full sm:w-auto` à classe final.
 
 ## Estrutura de implementação
 
@@ -65,7 +85,11 @@ Duas camadas de teste:
 - `full_width_mobile=True` aplica `w-full sm:w-auto`; ausente/False não aplica.
 - `aria_label` sobrescreve o texto acessível (`aria-label` no HTML) mantendo `label` como texto visível.
 - `hx_get`/`hx_target`/`hx_swap` passthrough aparecem literalmente nos atributos quando fornecidos; ausentes por padrão.
-- Invariantes comuns (`inline-flex items-center justify-center min-h-11 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1`) presentes em qualquer combinação.
+- `icon_template` incluído antes do `label` quando fornecido; ausente por padrão (nenhum ícone renderizado).
+- `class` passthrough é mesclado (append) às classes do componente, nunca substitui as invariantes/variant/size.
+- `data_modal_trigger` renderiza literalmente como `data-modal-trigger="{{ data_modal_trigger }}"` quando fornecido.
+- `label` ausente é erro de uso do template (parâmetro obrigatório) — teste cobre que o componente não falha silenciosamente: renderização sem `label` produz texto vazio visível (Django template engine não lança exceção para variável de contexto ausente por padrão), então o teste documenta esse comportamento explicitamente em vez de assumir uma validação que o Django não oferece nativamente para includes.
+- Invariantes comuns (`inline-flex items-center justify-center min-h-11 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1`) presentes em qualquer combinação, exceto o variant `link` (ver tabela de classes acima).
 
 **2. Testes de integração nos consumidores** (camada view, ADR-0010), estendendo `apps/requisicoes/tests/test_views.py` e `apps/estoque/tests/test_views.py` — mesmo padrão já usado em `test_minhas_vazia_exibe_empty_state_com_cta_canonico` (regex sobre a tag renderizada, checando `href`, classes, `aria-label`):
 - `lista_minhas`: card mobile e linha de tabela do botão "Ver detalhes"/"Ver" contêm `min-h-11` e `focus-visible:ring-blue-500` (prova da correção de drift) e preservam o `aria-label` composto existente.
