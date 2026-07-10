@@ -24,15 +24,27 @@ Criar `apps/core/templates/components/alert.html` conforme `docs/design-system.m
 
 ## Parâmetros do componente
 
-```
+```text
 variant        (default=info) info, success, warning, danger
-message        (obrigatório, exceto se body_template) texto/HTML da mensagem
+message        (obrigatório, exceto se body_template) texto autoescapado (Django escapa por
+               padrão); conteúdo HTML rico só via body_template, nunca via message
 body_template  (opcional) partial incluído no corpo — herda contexto do chamador
 icone          (opcional, bool, default=True)
 role           (opcional) sobrescreve role padrão (default: info/success=status, warning/danger=alert)
 aria_live      (opcional) valor de aria-live — sem default automático
 class          (opcional) passthrough de layout
 ```
+
+Nota sobre nomenclatura: `danger` é o nome de variante usado nos componentes existentes
+(`button.html`, e o próprio `docs/design-system.md` §4 especifica literalmente
+`info, success, warning, danger`). Isso é distinto do nível de severidade `error` do
+contrato de mensagens Django (`messages-contract`) — `alert.html` é um componente de
+apresentação (banner estático inline), não o contêiner de flash messages. Não há
+mapeamento a documentar porque os dois vocabulários operam em camadas diferentes.
+
+Dismiss/auto-dismiss (8s para success/info, manual para warning/error) é comportamento
+do contrato de mensagens (`_messages.html`, fora de escopo desta issue — ver seção
+"Fora de escopo" da issue #77). `alert.html` é estático, sem JS de dismissal.
 
 Visual: `rounded-lg border px-4 py-3 text-sm` + par cor-200/cor-50/cor-800 (spec).
 
