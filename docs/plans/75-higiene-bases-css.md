@@ -13,7 +13,7 @@ Parent: #68 (Épico — extração de componentes do design system)
      (hoje vazios: `{% block topbar_domain %}{% endblock %}` /
      `{% block sidebar_nav %}{% endblock %}`).
    - Trocar `{% extends "requisicoes/base.html" %}` / `{% extends "estoque/base.html" %}`
-     por `{% extends "base_auth.html" %}` nos 15 templates que hoje estendem
+     por `{% extends "base_auth.html" %}` nos 16 templates que hoje estendem
      as bases duplicadas (confirmado por grep, não os ~20 estimados na issue):
      - `apps/requisicoes/templates/requisicoes/{fila_atendimento,copiar_confirmacao,atender_retirada,detalhe,rascunho_form,lista_minhas,fila_autorizacao,historico_requisicoes}.html`
      - `apps/estoque/templates/estoque/{historico_movimentacoes,historico_importacoes_scpi,preview_importacao_scpi,confirmar_importacao_scpi,lista_saidas_excepcionais,lista_materiais,detalhe_saida_excepcional,nova_saida_excepcional}.html`
@@ -60,7 +60,7 @@ Parent: #68 (Épico — extração de componentes do design system)
 | `apps/core/templates/base_auth.html` | edita blocks `topbar_domain`/`sidebar_nav` com include default |
 | `apps/requisicoes/templates/requisicoes/base.html` | apagar |
 | `apps/estoque/templates/estoque/base.html` | apagar |
-| 15 templates (listados acima) | trocar `extends` |
+| 16 templates (listados acima) | trocar `extends` |
 | `requisicoes/detalhe.html`, `requisicoes/atender_retirada.html`, `requisicoes/rascunho_form.html`, `estoque/nova_saida_excepcional.html` | remover `<style>` + block `extra_head` vazio |
 | `apps/core/static/core/css/input.css` | adicionar 3 regras a `@layer components` |
 | `apps/core/static/core/css/app.css` | gerado por `npm run css:build`, entra no diff |
@@ -69,21 +69,25 @@ Parent: #68 (Épico — extração de componentes do design system)
 
 Refactor puro de template/CSS, sem mudança de domínio. Estratégia:
 
-- **Suíte existente como regressão principal**: views que renderizam os 15
+- **Suíte existente como regressão principal**: views que renderizam os 16
   templates afetados (requisições e estoque) já têm cobertura de smoke/status
   em `apps/requisicoes/tests/` e `apps/estoque/tests/` — um `extends` quebrado
   (`TemplateDoesNotExist`) ou bloco vazio derruba essas views com 500,
   detectável pela suíte sem teste novo dedicado.
 - **Verificação manual pós-implementação** (não automatizável neste projeto,
   sem teste de snapshot de HTML/CSS):
-  - Nav lateral (desktop) + drawer mobile aparecem em todas as 15 telas
+  - Nav lateral (desktop) + drawer mobile aparecem em todas as 16 telas
     afetadas e ausentes em `accounts/login.html`.
   - Scroll shadow visível em `detalhe.html` e `atender_retirada.html`.
   - Animação de modal preservada em `detalhe.html` e agora presente em
     qualquer outro `<dialog>` do app (ex.: `components/modal.html`).
   - `x-cloak` sem flash de conteúdo em `rascunho_form.html` e
     `nova_saida_excepcional.html`.
-  - `grep -rn "<style" apps/` retorna vazio.
+  - Verificação restrita aos 4 arquivos alterados (não ao repo inteiro, que
+    tem usos legítimos de `style=` inline fora de escopo, ex.
+    `apps/core/templates/base_auth.html:133-146` no badge de notificação):
+    `grep -n "<style\|style=" apps/requisicoes/templates/requisicoes/detalhe.html apps/requisicoes/templates/requisicoes/atender_retirada.html apps/requisicoes/templates/requisicoes/rascunho_form.html apps/estoque/templates/estoque/nova_saida_excepcional.html`
+    deve retornar vazio.
 
 ## Invariantes relevantes
 
@@ -97,7 +101,7 @@ alterado por este plano.
 
 - **Baixo.** Sem migrations, sem mutação de estoque, sem state machine.
 - Risco principal é mecânico: `extends` apontando para arquivo apagado
-  (`TemplateDoesNotExist`) se algum dos 15 templates for esquecido — mitigado
+  (`TemplateDoesNotExist`) se algum dos 16 templates for esquecido — mitigado
   por grep de verificação final (`grep -rln "requisicoes/base.html\|estoque/base.html" apps/`
   deve retornar vazio) + suíte completa.
 - Migração da animação de modal para escopo global é o único comportamento
