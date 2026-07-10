@@ -10,7 +10,7 @@
   - `apps/estoque/templates/estoque/lista_saidas_excepcionais.html` (2 "Ver detalhe" + CTA "Nova saída excepcional")
   - `apps/requisicoes/templates/requisicoes/partials/_tabela_historico_requisicoes.html` (2 "Ver detalhes"/"Ver")
   - `apps/requisicoes/templates/requisicoes/lista_minhas.html` (2 "Ver detalhes"/"Ver" — correção de drift a11y)
-- Ajuste pontual em `apps/core/templates/components/empty_state.html`: o branch do CTA primário (`cta_secundario` falso) passa a delegar para `components/button.html` com `variant="primary"`, porque é o único lugar onde a CTA "Nova saída excepcional" é de fato renderizada — sem esse ajuste a adoção da issue em `lista_saidas_excepcionais.html` fica incompleta. Markup resultante idêntico ao atual (mesmas classes, `min-h-11`/`focus-visible` já presentes).
+- Ajuste pontual em `apps/core/templates/components/empty_state.html`: o branch do CTA primário (`cta_secundario` falso) passa a delegar para `components/button.html` com `variant="primary"`, porque é o único lugar onde a CTA "Nova saída excepcional" é de fato renderizada — sem esse ajuste a adoção da issue em `lista_saidas_excepcionais.html` fica incompleta. **Requisito é paridade funcional/visual, não byte-a-byte**: o CTA atual usa `focus-visible:ring-offset-2` e não tem `justify-center`; as invariantes do componente (issue #76) mandam `ring-offset-1` + `justify-center` para todos os variants. A migração normaliza o CTA para essas invariantes — mesmo espírito da correção de drift já declarada para `lista_minhas.html` (ring offset menor, ainda visível e com contraste AA; `justify-center` é no-op visual em botão de largura única). Teste existente `test_minhas_vazia_exibe_empty_state_com_cta_canonico` cobre `min-h-11`/`focus-visible:ring-blue-500` e continua válido sem alteração; nenhum teste afirma paridade byte-a-byte.
 
 **Não entra (fora de escopo, conforme issue):**
 - `requisicoes/detalhe.html`, formulários, modais.
@@ -19,9 +19,9 @@
 
 ## Parâmetros do componente
 
-Baseado na spec da issue (mais específica que o inventário genérico de `docs/design-system.md` §1 — usa `danger-outline` real e nomes de parâmetro já usados no restante do design system):
+Baseado na spec da issue (mais específica que o inventário genérico de `docs/design-system.md` §1). **Divergência intencional registrada**: `danger-outline` não existe em `docs/design-system.md` §1 nem em `.design/TASKS.md` — a issue #76 pede essa variante explicitamente ("variante real usada nas ações destrutivas do detalhe"), então o corpo da issue é a fonte de verdade para esta fatia. Atualizar `docs/design-system.md`/`.design/TASKS.md` fica fora do escopo fechado desta issue (componente + 5 templates); registrado aqui para não ser tratado como esquecimento.
 
-```
+```text
 variant           default=primary (primary, secondary, danger, danger-outline, ghost, link)
 size              default=md (sm, md)
 type              default=button (button, submit) — só relevante quando href ausente
@@ -32,7 +32,7 @@ icon_template     opcional — caminho de partial incluído antes do label
 full_width_mobile opcional (boolean) — aplica w-full sm:w-auto
 aria_label        opcional — sobrescreve accessible name (necessário p/ "Atender requisição REQ-2026-001")
 class             opcional — passthrough para ajuste de layout do chamador
-hx_get/hx_post/hx_target/hx_swap  opcionais — passthrough HTMX literal
+hx_get/hx_post/hx_target/hx_swap  opcionais — passthrough HTMX literal (sem uso nesta fatia; nenhum dos 5 templates-alvo usa HTMX no botão. Contrato PRG/`HX-Redirect` de `docs/CONVENTIONS.md` é responsabilidade da view consumidora quando esses parâmetros forem adotados — fora do escopo desta issue)
 data_modal_trigger opcional — passthrough para abertura de modal via Alpine
 ```
 
@@ -54,9 +54,20 @@ Demais 4 telas já usam `min-h-11`/`focus-visible:` — adoção deve ser visual
 
 ## Test strategy
 
-Sem app novo de testes; estender `apps/requisicoes/tests/test_views.py` e `apps/estoque/tests/test_views.py` (camada view, ADR-0010) com asserções sobre o HTML renderizado — mesmo padrão já usado em `test_minhas_vazia_exibe_empty_state_com_cta_canonico` (regex sobre a tag `<a>`, checando `href`, `min-h-11`, `focus-visible:ring-*`).
+Duas camadas de teste:
 
-Casos cobertos:
+**1. Testes diretos do componente** (novo `apps/core/tests/test_components.py`, via `django.template.loader.render_to_string("components/button.html", {...})`), cobrindo matriz mínima:
+- Ramo `<a>` (com `href`) vs ramo `<button>` (sem `href`): tag renderizada correta em cada caso.
+- `type="submit"` vs default `"button"` no ramo `<button>`.
+- `disabled=True` aplica `disabled` + `disabled:cursor-not-allowed disabled:opacity-60` (só faz sentido no ramo `<button>`).
+- Cada `variant` (primary, secondary, danger, danger-outline, ghost, link) produz as classes de cor esperadas.
+- Cada `size` (sm, md) produz padding/tipografia esperados.
+- `full_width_mobile=True` aplica `w-full sm:w-auto`; ausente/False não aplica.
+- `aria_label` sobrescreve o texto acessível (`aria-label` no HTML) mantendo `label` como texto visível.
+- `hx_get`/`hx_target`/`hx_swap` passthrough aparecem literalmente nos atributos quando fornecidos; ausentes por padrão.
+- Invariantes comuns (`inline-flex items-center justify-center min-h-11 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1`) presentes em qualquer combinação.
+
+**2. Testes de integração nos consumidores** (camada view, ADR-0010), estendendo `apps/requisicoes/tests/test_views.py` e `apps/estoque/tests/test_views.py` — mesmo padrão já usado em `test_minhas_vazia_exibe_empty_state_com_cta_canonico` (regex sobre a tag renderizada, checando `href`, classes, `aria-label`):
 - `lista_minhas`: card mobile e linha de tabela do botão "Ver detalhes"/"Ver" contêm `min-h-11` e `focus-visible:ring-blue-500` (prova da correção de drift) e preservam o `aria-label` composto existente.
 - `fila_atendimento`: botão "Atender" preserva `aria-label="Atender requisição {numero_publico}"` após migração.
 - `fila_autorizacao`: botão "Analisar" preserva `aria-label="Analisar requisição {numero_publico}"` após migração.
@@ -72,4 +83,4 @@ Nenhuma — esta issue não toca `services`, `policies`, `selectors` ou regras d
 ## Riscos
 
 - Regressão visual sutil se `size`/`variant` mapeados incorretamente para as classes de padding/tipografia atuais (mobile usa `text-sm px-3 py-2`, desktop tabela usa `text-xs px-3 py-2`) — mitigado por verificação manual no browser (375px e desktop) antes de fechar, conforme critério de aceite.
-- `empty_state.html` é usado por outras 6+ telas fora do escopo desta issue — a migração do branch do CTA primário deve manter o HTML final byte-a-byte idêntico ao atual para não introduzir drift nessas outras telas. Validar com o teste existente `test_minhas_vazia_exibe_empty_state_com_cta_canonico`, que já cobre esse branch e não deve precisar de alteração.
+- `empty_state.html` é usado por outras 6+ telas fora do escopo desta issue — a migração do branch do CTA primário troca `focus-visible:ring-offset-2` por `ring-offset-1` e adiciona `justify-center` (paridade funcional, não byte-a-byte — ver seção Escopo). Validar com o teste existente `test_minhas_vazia_exibe_empty_state_com_cta_canonico`, que continua cobrindo `min-h-11`/`focus-visible:ring-blue-500` sem precisar de alteração.
