@@ -154,7 +154,9 @@ def test_label_ausente_nao_falha_e_nao_mascara_com_texto_generico():
     assert 'button' in html.lower()
 
 
-@pytest.mark.parametrize('variant', ['primary', 'secondary', 'danger', 'danger-outline', 'ghost'])
+@pytest.mark.parametrize(
+    'variant', ['primary', 'secondary', 'danger', 'danger-outline', 'ghost']
+)
 def test_invariantes_comuns_presentes_exceto_link(variant):
     html = _render(variant=variant)
     for classe in [

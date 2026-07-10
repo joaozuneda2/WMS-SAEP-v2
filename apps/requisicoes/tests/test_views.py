@@ -1710,7 +1710,9 @@ def test_fila_atendimento_botao_atender_preserva_aria_label(
     _login(client, aux_almoxarifado)
     response = client.get(reverse('requisicoes:atendimentos'))
     html = response.content.decode('utf-8')
-    assert f'aria-label="Atender requisição {req_autorizada_view.numero_publico}"' in html
+    assert (
+        f'aria-label="Atender requisição {req_autorizada_view.numero_publico}"' in html
+    )
 
 
 @pytest.mark.django_db
