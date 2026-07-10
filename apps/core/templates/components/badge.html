@@ -2,7 +2,7 @@
 Componente global de badge/pill. Não conhece enums de domínio — só variante visual.
 Partials de domínio (ex. _estado_badge.html) mapeiam estado -> variant/label/role/aria_label.
 
-Params:
+Parâmetros:
   variant     (obrigatório) slate, blue, blue-strong, amber, amber-strong,
               green, red, red-strong, orange, teal, indigo, violet, yellow
   label       (obrigatório) texto do badge
@@ -39,5 +39,5 @@ Uso:
 {% elif variant == 'yellow' %}
   <span{% if role %} role="{{ role }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %} class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-900 ring-1 ring-inset ring-yellow-200">{{ label }}</span>
 {% else %}
-  <span{% if role %} role="{{ role }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %} class="inline-flex items-center rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white ring-1 ring-inset ring-red-700">{{ label|default:"?" }} (variant inválida: "{{ variant }}")</span>
+  <span{% if role %} role="{{ role }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %} class="inline-flex items-center rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white ring-1 ring-inset ring-red-700">Indisponível</span>
 {% endif %}
