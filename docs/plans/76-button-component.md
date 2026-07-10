@@ -32,7 +32,7 @@ icon_template     opcional — caminho de partial incluído antes do label
 full_width_mobile opcional (boolean) — aplica w-full sm:w-auto
 aria_label        opcional — sobrescreve accessible name (necessário p/ "Atender requisição REQ-2026-001")
 class             opcional — passthrough para ajuste de layout do chamador
-hx_get/hx_post/hx_target/hx_swap  opcionais — passthrough HTMX literal (sem uso nesta fatia; nenhum dos 5 templates-alvo usa HTMX no botão. Contrato PRG/`HX-Redirect` de `docs/CONVENTIONS.md` é responsabilidade da view consumidora quando esses parâmetros forem adotados — fora do escopo desta issue)
+hx_get/hx_post/hx_target/hx_swap  opcionais — passthrough HTMX literal, renderizados com hífen (`hx_get`→`hx-get`, `hx_post`→`hx-post`, `hx_target`→`hx-target`, `hx_swap`→`hx-swap`; nome com underscore é só o parâmetro do template, HTMX exige o atributo HTML com hífen) (sem uso nesta fatia; nenhum dos 5 templates-alvo usa HTMX no botão. Contrato PRG/`HX-Redirect` de `docs/CONVENTIONS.md` é responsabilidade da view consumidora quando esses parâmetros forem adotados — fora do escopo desta issue)
 data_modal_trigger opcional — passthrough para abertura de modal via Alpine
 ```
 
@@ -84,7 +84,7 @@ Duas camadas de teste:
 - Cada `size` (sm, md) produz padding/tipografia esperados.
 - `full_width_mobile=True` aplica `w-full sm:w-auto`; ausente/False não aplica.
 - `aria_label` sobrescreve o texto acessível (`aria-label` no HTML) mantendo `label` como texto visível.
-- `hx_get`/`hx_post`/`hx_target`/`hx_swap` passthrough aparecem literalmente nos atributos quando fornecidos (incluindo `hx_post`, caso de teste explícito); ausentes por padrão.
+- `hx_get`/`hx_post`/`hx_target`/`hx_swap` passthrough renderizam como os atributos HTML `hx-get`/`hx-post`/`hx-target`/`hx-swap` (hífen, não underscore — exigência do HTMX) quando fornecidos; ausentes por padrão. Teste asserta o nome exato do atributo HTML gerado, não o nome do parâmetro do template.
 - `icon_template` incluído antes do `label` quando fornecido; ausente por padrão (nenhum ícone renderizado).
 - `class` passthrough é mesclado (append) às classes do componente, nunca substitui as invariantes/variant/size.
 - `data_modal_trigger` renderiza literalmente como `data-modal-trigger="{{ data_modal_trigger }}"` quando fornecido.
