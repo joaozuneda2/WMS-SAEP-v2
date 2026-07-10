@@ -49,6 +49,17 @@ class TestListarSaidasExcepcionaisView:
         response = client.get(URL)
         assert 'saidas' in response.context
 
+    def test_botao_ver_detalhe_preserva_aria_label(
+        self, client, chefe_almoxarifado, saida_registrada
+    ):
+        client.force_login(chefe_almoxarifado)
+        response = client.get(URL)
+        html = response.content.decode('utf-8')
+        assert (
+            f'aria-label="Ver detalhe da saída {saida_registrada.numero_publico}"'
+            in html
+        )
+
     def test_pode_registrar_verdadeiro_para_chefe(self, client, chefe_almoxarifado):
         client.force_login(chefe_almoxarifado)
         response = client.get(URL)
