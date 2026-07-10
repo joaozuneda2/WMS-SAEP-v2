@@ -1,5 +1,7 @@
 """Testes diretos de components/button.html (sem DB, sem view)."""
 
+import re
+
 import pytest
 from django.template.loader import render_to_string
 
@@ -32,11 +34,18 @@ def test_type_submit():
     assert 'type="submit"' in html
 
 
-def test_disabled_aplica_atributo_e_classes():
+def test_disabled_aplica_atributo_boolean_na_tag():
     html = _render(disabled=True)
-    assert 'disabled' in html
+    abertura = html[: html.index('>') + 1]
+    assert re.search(r'\bdisabled\b(?!:)', abertura)
     assert 'disabled:cursor-not-allowed' in html
     assert 'disabled:opacity-60' in html
+
+
+def test_disabled_false_nao_aplica_atributo_na_tag():
+    html = _render(disabled=False)
+    abertura = html[: html.index('>') + 1]
+    assert not re.search(r'\bdisabled\b(?!:)', abertura)
 
 
 @pytest.mark.parametrize(
@@ -148,9 +157,23 @@ def test_icon_template_ausente_por_padrao_nao_renderiza_span_icone():
     assert 'aria-hidden="true"' not in html
 
 
-def test_label_ausente_nao_falha_e_nao_mascara_com_texto_generico():
+def test_botao_somente_icone_usa_aria_label_como_nome_acessivel():
+    html = render_to_string(
+        'components/button.html',
+        {
+            'label': '',
+            'aria_label': 'Fechar',
+            'icon_template': 'components/icons/_check.html',
+        },
+    )
+    assert 'aria-label="Fechar"' in html
+    assert 'aria-hidden="true"' in html
+
+
+def test_label_e_aria_label_ausentes_nao_mascara_com_texto_generico():
     html = render_to_string('components/button.html', {})
     assert 'Botão' not in html
+    assert 'aria-label' not in html
     assert 'button' in html.lower()
 
 

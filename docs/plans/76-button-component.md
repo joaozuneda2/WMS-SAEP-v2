@@ -14,8 +14,22 @@
 
 **Não entra (fora de escopo, conforme issue):**
 - `requisicoes/detalhe.html`, formulários, modais.
-- Parâmetro `loading` com integração real ao `form-submit.js` (fica previsto na assinatura, mas sem uso nesta fatia).
+- Parâmetro `loading`: **não faz parte do contrato desta fatia** — não está entre os 15 parâmetros listados abaixo, não é implementado, não é testado. É recurso futuro (depende de `form-submit.js`, issue #73), citado aqui só para registrar que foi considerado e descartado nesta fatia — não há contradição: `loading` simplesmente não existe no componente entregue por esta issue.
 - Qualquer mudança de comportamento em services/policies/selectors.
+
+**Inventário de consumidores de `empty_state.html` afetados pela normalização de invariantes do CTA primário** (7 templates usam o componente; só 2 usam o branch do CTA primário — `cta_secundario` ausente/falso — que muda de classe):
+
+| Template | Branch usado | Afetado pela normalização? |
+|---|---|---|
+| `lista_minhas.html` | CTA primário (`cta_url`+`cta_label`) | Sim — dentro do escopo desta issue, testado em `test_minhas_vazia_exibe_empty_state_com_cta_canonico` |
+| `estoque/lista_saidas_excepcionais.html` | CTA primário (`cta_url`+`cta_label`) | Sim — dentro do escopo desta issue, testado em `test_empty_state_cta_delega_para_componente_button` |
+| `estoque/lista_materiais.html` | CTA secundário (`cta_secundario=True`, variant `link`) | Não — branch diferente, classes inalteradas |
+| `estoque/partials/_tabela_movimentacoes.html` | Sem CTA (`cta_url` ausente) | Não — bloco de CTA nem renderiza |
+| `fila_atendimento.html` | Sem CTA | Não |
+| `fila_autorizacao.html` | Sem CTA | Não |
+| `_tabela_historico_requisicoes.html` | Sem CTA | Não |
+
+Conclusão: os únicos 2 consumidores afetados pela mudança de classes já estão cobertos por teste de regressão nesta própria issue — não há consumidor fora de escopo impactado.
 
 ## Parâmetros do componente
 
@@ -79,7 +93,7 @@ Duas camadas de teste:
 **1. Testes diretos do componente** (novo `apps/core/tests/test_components.py`, via `django.template.loader.render_to_string("components/button.html", {...})`), cobrindo matriz mínima:
 - Ramo `<a>` (com `href`) vs ramo `<button>` (sem `href`): tag renderizada correta em cada caso.
 - `type="submit"` vs default `"button"` no ramo `<button>`.
-- `disabled=True` aplica `disabled` + `disabled:cursor-not-allowed disabled:opacity-60` (só faz sentido no ramo `<button>`).
+- `disabled=True` aplica o atributo booleano `disabled` na tag `<button>` (asserção sobre a tag de abertura, não apenas as classes `disabled:*` — que aparecem sempre, disabled ou não) + `disabled:cursor-not-allowed disabled:opacity-60`. `disabled=False`/ausente não aplica o atributo.
 - Cada `variant` (primary, secondary, danger, danger-outline, ghost, link) produz as classes de cor esperadas.
 - Cada `size` (sm, md) produz padding/tipografia esperados.
 - `full_width_mobile=True` aplica `w-full sm:w-auto`; ausente/False não aplica.
@@ -88,15 +102,15 @@ Duas camadas de teste:
 - `icon_template` incluído antes do `label` quando fornecido; ausente por padrão (nenhum ícone renderizado).
 - `class` passthrough é mesclado (append) às classes do componente, nunca substitui as invariantes/variant/size.
 - `data_modal_trigger` renderiza literalmente como `data-modal-trigger="{{ data_modal_trigger }}"` quando fornecido.
-- `label` é obrigatório por contrato, mas **não é validado em tempo de renderização** — Django não oferece validação nativa de parâmetros obrigatórios em `{% include %}`. Regra explícita (resolve a ambiguidade "obrigatório" vs. comportamento real): omitir `label` é responsabilidade do chamador, não do componente; o componente não substitui por um fallback textual (não inventa "Botão" ou texto genérico). Teste correspondente comprova exatamente isso — renderização sem `label` produz um botão/link sem texto visível nem `aria-label` implícito, ou seja, sem `label` **e** sem `aria_label` o resultado é inacessível por decisão do chamador, não silenciosamente mascarado pelo componente. Todo consumidor desta issue (5 templates) sempre passa `label` ou `aria_label`; nenhum uso real depende desse caminho.
+- `label` é obrigatório por contrato, mas **não é validado em tempo de renderização** — Django não oferece validação nativa de parâmetros obrigatórios em `{% include %}`. Regra explícita (resolve a ambiguidade "obrigatório" vs. comportamento real): omitir `label` é responsabilidade do chamador, não do componente; o componente não substitui por um fallback textual (não inventa "Botão" ou texto genérico). Dois testes cobrem isso: (1) cenário real — botão só-com-ícone (`icon_template` + `label=""`) usa `aria_label` como nome acessível, prova que o padrão suportado para "sem texto visível" é `icon_template`+`aria_label`, não omitir tudo; (2) cenário de uso inválido — contexto totalmente vazio (sem `label` nem `aria_label`) não produz `aria-label` nem mascara com texto genérico, documentando que esse caminho é responsabilidade do chamador. Todo consumidor desta issue (5 templates) sempre passa `label` ou `aria_label`; nenhum uso real depende do caminho (2).
 - Invariantes comuns (`inline-flex items-center justify-center min-h-11 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1`) presentes em qualquer combinação, exceto o variant `link` (ver tabela de classes acima).
 
 **2. Testes de integração nos consumidores** (camada view, ADR-0010), estendendo `apps/requisicoes/tests/test_views.py` e `apps/estoque/tests/test_views.py` — mesmo padrão já usado em `test_minhas_vazia_exibe_empty_state_com_cta_canonico` (regex sobre a tag renderizada, checando `href`, classes, `aria-label`):
-- `lista_minhas`: card mobile e linha de tabela do botão "Ver detalhes"/"Ver" contêm `min-h-11` e `focus-visible:ring-blue-500` (prova da correção de drift) e preservam o `aria-label` composto existente.
+- `lista_minhas`: card mobile e linha de tabela do botão "Ver detalhes"/"Ver" contêm `min-h-11` e `focus-visible:ring-blue-500` (prova da correção de drift) e preservam o `aria-label` composto existente — testado para requisição com `numero_publico` e para rascunho sem `numero_publico` (fallback por `pk`, caminho que exercita a conversão de tipo `int → str` no `aria_label`).
 - `fila_atendimento`: botão "Atender" preserva `aria-label="Atender requisição {numero_publico}"` após migração.
 - `fila_autorizacao`: botão "Analisar" preserva `aria-label="Analisar requisição {numero_publico}"` após migração.
-- `lista_saidas_excepcionais`: botão "Ver detalhe" preserva `aria-label` composto; CTA "Nova saída excepcional" do empty state continua com `min-h-11`/`focus-visible:ring-blue-500` após `empty_state.html` passar a delegar para `button.html`. `test_minhas_vazia_exibe_empty_state_com_cta_canonico` ganha novas asserções: `justify-center` presente e `focus-visible:ring-offset-1` presente / `ring-offset-2` ausente — prova de que a normalização de invariantes descrita na seção Escopo realmente aconteceu (não só documentada).
-- `_tabela_historico_requisicoes` (via view de histórico): botão "Ver detalhes"/"Ver" com `href` e classes esperadas.
+- `lista_saidas_excepcionais`: botão "Ver detalhe" preserva `aria-label` composto — testado com `numero_publico` e com fallback por `pk` (mesma razão do fallback de `lista_minhas`); CTA "Nova saída excepcional" do empty state tem `min-h-11`/`justify-center`/`focus-visible:ring-offset-1` (sem `ring-offset-2`) após `empty_state.html` passar a delegar para `button.html`. `test_minhas_vazia_exibe_empty_state_com_cta_canonico` ganha as mesmas asserções para o consumidor `lista_minhas` — prova de que a normalização de invariantes descrita na seção Escopo realmente aconteceu (não só documentada) nos 2 consumidores afetados (ver inventário na seção Escopo).
+- `_tabela_historico_requisicoes` (via view de histórico): botão "Ver detalhes"/"Ver" com `href` completo (incluindo `?next=` urlencoded) e classes esperadas.
 
 Não há caso de erro/exceção de domínio a testar — componente é puramente de apresentação, sem `if` de domínio.
 

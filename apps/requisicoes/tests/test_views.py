@@ -629,6 +629,17 @@ def test_minhas_botao_ver_detalhes_corrige_drift_a11y(
 
 
 @pytest.mark.django_db
+def test_minhas_botao_ver_detalhes_rascunho_preserva_aria_label(
+    client, solicitante, req_rascunho_solicitante
+):
+    _login(client, solicitante)
+    response = client.get(reverse('requisicoes:minhas'))
+    html = response.content.decode()
+    aria_label = f'Ver detalhes do rascunho #{req_rascunho_solicitante.pk}'
+    assert html.count(f'aria-label="{aria_label}"') == 2
+
+
+@pytest.mark.django_db
 def test_minhas_vazia_exibe_empty_state_com_cta_canonico(client, solicitante):
     _login(client, solicitante)
     response = client.get(reverse('requisicoes:minhas'))
@@ -2885,14 +2896,18 @@ class TestHistoricoRequisicoesView:
     def test_botao_ver_detalhes_com_href_e_classes_esperadas(
         self, client, chefe_obras, req_historico_obras
     ):
+        from django.template.defaultfilters import urlencode as tpl_urlencode
+
         _login(client, chefe_obras)
         response = client.get(URL_HISTORICO_REQUISICOES)
         html = response.content.decode('utf-8')
-        href_esperado = reverse(
-            'requisicoes:detalhe', kwargs={'pk': req_historico_obras.pk}
+        href_esperado = (
+            reverse('requisicoes:detalhe', kwargs={'pk': req_historico_obras.pk})
+            + '?next='
+            + tpl_urlencode(URL_HISTORICO_REQUISICOES)
         )
-        assert href_esperado in html
-        marker = f'href="{href_esperado}'
+        marker = f'href="{href_esperado}"'
+        assert marker in html
         idx = html.index(marker)
         tag = html[html.rindex('<a', 0, idx) : html.index('>', idx) + 1]
         assert 'min-h-11' in tag
