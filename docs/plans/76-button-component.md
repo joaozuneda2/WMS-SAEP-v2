@@ -72,7 +72,7 @@ Invariantes (issue): `inline-flex items-center justify-center min-h-11 rounded-m
 
 Demais 4 telas já usam `min-h-11`/`focus-visible:` — adoção deve ser visualmente idêntica (paridade de classes finais).
 
-## Test strategy
+## Estratégia de testes
 
 Duas camadas de teste:
 
@@ -84,18 +84,18 @@ Duas camadas de teste:
 - Cada `size` (sm, md) produz padding/tipografia esperados.
 - `full_width_mobile=True` aplica `w-full sm:w-auto`; ausente/False não aplica.
 - `aria_label` sobrescreve o texto acessível (`aria-label` no HTML) mantendo `label` como texto visível.
-- `hx_get`/`hx_target`/`hx_swap` passthrough aparecem literalmente nos atributos quando fornecidos; ausentes por padrão.
+- `hx_get`/`hx_post`/`hx_target`/`hx_swap` passthrough aparecem literalmente nos atributos quando fornecidos (incluindo `hx_post`, caso de teste explícito); ausentes por padrão.
 - `icon_template` incluído antes do `label` quando fornecido; ausente por padrão (nenhum ícone renderizado).
 - `class` passthrough é mesclado (append) às classes do componente, nunca substitui as invariantes/variant/size.
 - `data_modal_trigger` renderiza literalmente como `data-modal-trigger="{{ data_modal_trigger }}"` quando fornecido.
-- `label` ausente é erro de uso do template (parâmetro obrigatório) — teste cobre que o componente não falha silenciosamente: renderização sem `label` produz texto vazio visível (Django template engine não lança exceção para variável de contexto ausente por padrão), então o teste documenta esse comportamento explicitamente em vez de assumir uma validação que o Django não oferece nativamente para includes.
+- `label` é obrigatório por contrato, mas **não é validado em tempo de renderização** — Django não oferece validação nativa de parâmetros obrigatórios em `{% include %}`. Regra explícita (resolve a ambiguidade "obrigatório" vs. comportamento real): omitir `label` é responsabilidade do chamador, não do componente; o componente não substitui por um fallback textual (não inventa "Botão" ou texto genérico). Teste correspondente comprova exatamente isso — renderização sem `label` produz um botão/link sem texto visível nem `aria-label` implícito, ou seja, sem `label` **e** sem `aria_label` o resultado é inacessível por decisão do chamador, não silenciosamente mascarado pelo componente. Todo consumidor desta issue (5 templates) sempre passa `label` ou `aria_label`; nenhum uso real depende desse caminho.
 - Invariantes comuns (`inline-flex items-center justify-center min-h-11 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1`) presentes em qualquer combinação, exceto o variant `link` (ver tabela de classes acima).
 
 **2. Testes de integração nos consumidores** (camada view, ADR-0010), estendendo `apps/requisicoes/tests/test_views.py` e `apps/estoque/tests/test_views.py` — mesmo padrão já usado em `test_minhas_vazia_exibe_empty_state_com_cta_canonico` (regex sobre a tag renderizada, checando `href`, classes, `aria-label`):
 - `lista_minhas`: card mobile e linha de tabela do botão "Ver detalhes"/"Ver" contêm `min-h-11` e `focus-visible:ring-blue-500` (prova da correção de drift) e preservam o `aria-label` composto existente.
 - `fila_atendimento`: botão "Atender" preserva `aria-label="Atender requisição {numero_publico}"` após migração.
 - `fila_autorizacao`: botão "Analisar" preserva `aria-label="Analisar requisição {numero_publico}"` após migração.
-- `lista_saidas_excepcionais`: botão "Ver detalhe" preserva `aria-label` composto; CTA "Nova saída excepcional" do empty state continua com `min-h-11`/`focus-visible:ring-blue-500` após `empty_state.html` passar a delegar para `button.html`.
+- `lista_saidas_excepcionais`: botão "Ver detalhe" preserva `aria-label` composto; CTA "Nova saída excepcional" do empty state continua com `min-h-11`/`focus-visible:ring-blue-500` após `empty_state.html` passar a delegar para `button.html`. `test_minhas_vazia_exibe_empty_state_com_cta_canonico` ganha novas asserções: `justify-center` presente e `focus-visible:ring-offset-1` presente / `ring-offset-2` ausente — prova de que a normalização de invariantes descrita na seção Escopo realmente aconteceu (não só documentada).
 - `_tabela_historico_requisicoes` (via view de histórico): botão "Ver detalhes"/"Ver" com `href` e classes esperadas.
 
 Não há caso de erro/exceção de domínio a testar — componente é puramente de apresentação, sem `if` de domínio.
