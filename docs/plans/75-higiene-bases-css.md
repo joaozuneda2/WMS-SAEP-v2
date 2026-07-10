@@ -22,9 +22,12 @@ Parent: #68 (Épico — extração de componentes do design system)
    - `apps/accounts/templates/accounts/login.html` já estende `base.html`
      (raiz, não autenticado) — sem mudança, confirmado.
    - `apps/notificacoes/templates/notificacoes/lista.html` já estende
-     `base_auth.html` diretamente — sem mudança, confirmado. A nav só
-     renderiza sob `user.is_authenticated` (já condicionado em
-     `base_auth.html`), então login não ganha nav.
+     `base_auth.html` diretamente, sem sobrescrever `topbar_domain`/`sidebar_nav`
+     — **passa a ganhar a navegação por padrão** (intencional: o novo default
+     dos blocks é global, não opt-in por template; efeito colateral desejado
+     pela issue — "qualquer app autenticado ganha a navegação por padrão").
+     A nav continua condicionada a `user.is_authenticated` em `base_auth.html`,
+     então `accounts/login.html` (não autenticado) permanece sem nav.
 
 2. **CSS inline → `apps/core/static/core/css/input.css`** (`@layer components`,
    ao final do bloco existente, antes do `}` de fechamento em torno da linha 485):
@@ -33,9 +36,14 @@ Parent: #68 (Épico — extração de componentes do design system)
      como está.
    - Animações de modal (`modal-entrar`, `modal-backdrop-entrar`, keyframes,
      media query `prefers-reduced-motion: no-preference`) — hoje só em
-     `requisicoes/detalhe.html:23-47`. Vira global: `dialog[open]` /
-     `dialog::backdrop` em qualquer template passam a herdar a animação
-     (ganho desejado pela issue).
+     `requisicoes/detalhe.html:23-47`. Vira global via seletor de elemento
+     (`dialog[open]` / `dialog::backdrop`), sem restrição por classe — decisão
+     deliberada, não um efeito colateral acidental. Modais existentes que
+     passam a herdar a animação (confirmado por grep de `<dialog` no repo):
+     `apps/core/templates/components/modal.html:46` e
+     `apps/requisicoes/templates/requisicoes/atender_retirada.html:235`
+     (ganho explicitamente desejado pela issue: "modais de outras telas ganham
+     a animação").
    - `[x-cloak] { display: none !important; }` — hoje duplicado em
      `requisicoes/rascunho_form.html:9` e `estoque/nova_saida_excepcional.html:7`.
      Vira global.
@@ -102,7 +110,8 @@ alterado por este plano.
 - **Baixo.** Sem migrations, sem mutação de estoque, sem state machine.
 - Risco principal é mecânico: `extends` apontando para arquivo apagado
   (`TemplateDoesNotExist`) se algum dos 16 templates for esquecido — mitigado
-  por grep de verificação final (`grep -rln "requisicoes/base.html\|estoque/base.html" apps/`
+  por grep de verificação final em todo o repositório, não só em `apps/`
+  (`rg -n --glob '*.html' 'requisicoes/base\.html|estoque/base\.html' .`
   deve retornar vazio) + suíte completa.
 - Migração da animação de modal para escopo global é o único comportamento
   novo (efeito colateral desejado pela issue) — risco de regressão visual em
