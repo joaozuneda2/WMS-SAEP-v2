@@ -350,9 +350,9 @@
                 {% if linha.status == 'ok' %}
                   {% include "components/badge.html" with variant="green" label="OK" %}
                 {% elif linha.status == 'divergente' %}
-                  {% include "components/badge.html" with variant="amber" label="Divergência" %}
+                  {% include "components/badge.html" with variant="amber" label="Divergência" aria_label="Divergência: saldo SCPI difere do WMS" %}
                 {% else %}
-                  {% include "components/badge.html" with variant="teal" label="Novo" %}
+                  {% include "components/badge.html" with variant="teal" label="Novo" aria_label="Material novo: não existe no WMS" %}
                 {% endif %}
               </span>
             </div>

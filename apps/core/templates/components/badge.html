@@ -38,4 +38,6 @@ Uso:
   <span{% if role %} role="{{ role }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %} class="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-900 ring-1 ring-inset ring-violet-200">{{ label }}</span>
 {% elif variant == 'yellow' %}
   <span{% if role %} role="{{ role }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %} class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-900 ring-1 ring-inset ring-yellow-200">{{ label }}</span>
+{% else %}
+  <span{% if role %} role="{{ role }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %} class="inline-flex items-center rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white ring-1 ring-inset ring-red-700">{{ label|default:"?" }} (variant inválida: "{{ variant }}")</span>
 {% endif %}
