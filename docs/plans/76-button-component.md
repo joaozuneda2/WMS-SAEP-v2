@@ -10,7 +10,7 @@
   - `apps/estoque/templates/estoque/lista_saidas_excepcionais.html` (2 "Ver detalhe" + CTA "Nova saída excepcional")
   - `apps/requisicoes/templates/requisicoes/partials/_tabela_historico_requisicoes.html` (2 "Ver detalhes"/"Ver")
   - `apps/requisicoes/templates/requisicoes/lista_minhas.html` (2 "Ver detalhes"/"Ver" — correção de drift a11y)
-- Ajuste pontual em `apps/core/templates/components/empty_state.html`: o branch do CTA primário (`cta_secundario` falso) passa a delegar para `components/button.html` com `variant="primary"`, porque é o único lugar onde a CTA "Nova saída excepcional" é de fato renderizada — sem esse ajuste a adoção da issue em `lista_saidas_excepcionais.html` fica incompleta. **Requisito é paridade funcional/visual, não byte-a-byte**: o CTA atual usa `focus-visible:ring-offset-2` e não tem `justify-center`; as invariantes do componente (issue #76) mandam `ring-offset-1` + `justify-center` para todos os variants. A migração normaliza o CTA para essas invariantes — mesmo espírito da correção de drift já declarada para `lista_minhas.html` (ring offset menor, ainda visível e com contraste AA; `justify-center` é no-op visual em botão de largura única). Teste existente `test_minhas_vazia_exibe_empty_state_com_cta_canonico` cobre `min-h-11`/`focus-visible:ring-blue-500` e continua válido sem alteração; nenhum teste afirma paridade byte-a-byte.
+- Ajuste pontual em `apps/core/templates/components/empty_state.html`: o branch do CTA primário (`cta_secundario` falso) passa a delegar para `components/button.html` com `variant="primary"`, porque é o único lugar onde a CTA "Nova saída excepcional" é de fato renderizada — sem esse ajuste a adoção da issue em `lista_saidas_excepcionais.html` fica incompleta. **Requisito é paridade funcional/visual, não byte-a-byte**: o CTA atual usa `focus-visible:ring-offset-2` e não tem `justify-center`; as invariantes do componente (issue #76) mandam `ring-offset-1` + `justify-center` para todos os variants. A migração normaliza o CTA para essas invariantes — mesmo espírito da correção de drift já declarada para `lista_minhas.html` (ring offset menor, ainda visível e com contraste AA; `justify-center` é no-op visual em botão de largura única). Teste existente `test_minhas_vazia_exibe_empty_state_com_cta_canonico` cobre `min-h-11`/`focus-visible:ring-blue-500` hoje; ganha asserções novas nesta issue (`justify-center` presente, `ring-offset-1` presente/`ring-offset-2` ausente — ver seção Estratégia de testes) para provar que a normalização aconteceu de fato, não só na documentação.
 
 **Não entra (fora de escopo, conforme issue):**
 - `requisicoes/detalhe.html`, formulários, modais.
@@ -53,7 +53,7 @@ Tabela de referência para implementação e testes (todas as classes abaixo se 
 
 | size | classes de padding/tipografia |
 |---|---|
-| sm | `px-3 py-1.5 text-xs` |
+| sm | `px-3 py-2 text-xs` |
 | md (default) | `px-3 py-2 text-sm` |
 
 `full_width_mobile=True` soma `w-full sm:w-auto` à classe final.
@@ -107,4 +107,4 @@ Nenhuma — esta issue não toca `services`, `policies`, `selectors` ou regras d
 ## Riscos
 
 - Regressão visual sutil se `size`/`variant` mapeados incorretamente para as classes de padding/tipografia atuais (mobile usa `text-sm px-3 py-2`, desktop tabela usa `text-xs px-3 py-2`) — mitigado por verificação manual no browser (375px e desktop) antes de fechar, conforme critério de aceite.
-- `empty_state.html` é usado por outras 6+ telas fora do escopo desta issue — a migração do branch do CTA primário troca `focus-visible:ring-offset-2` por `ring-offset-1` e adiciona `justify-center` (paridade funcional, não byte-a-byte — ver seção Escopo). Validar com o teste existente `test_minhas_vazia_exibe_empty_state_com_cta_canonico`, que continua cobrindo `min-h-11`/`focus-visible:ring-blue-500` sem precisar de alteração.
+- `empty_state.html` é usado por outras 6+ telas fora do escopo desta issue — a migração do branch do CTA primário troca `focus-visible:ring-offset-2` por `ring-offset-1` e adiciona `justify-center` (paridade funcional, não byte-a-byte — ver seção Escopo). `test_minhas_vazia_exibe_empty_state_com_cta_canonico` ganha novas asserções para essa mudança (ver seção Estratégia de testes) — não fica só documentada.
