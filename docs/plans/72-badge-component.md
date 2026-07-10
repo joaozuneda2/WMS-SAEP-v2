@@ -2,7 +2,7 @@
 
 ## Parent
 
-#68 (Fase 1 — fundações)
+Issue #68 (Fase 1 — fundações)
 
 ## Escopo
 
@@ -14,12 +14,21 @@
 
 **Não muda:** mapa semântico cor↔estado, views, services/policies/selectors, tokens semânticos.
 
+**`status_badge.html` vs `badge.html`:** `docs/design-system.md` (§Inventário inicial) planejava o nome `status_badge.html`, mas nenhum arquivo com esse nome existe no repositório — é só um nome de inventário, nunca implementado. A issue #72 nomeia o componente real como `badge.html`; não há dois contratos concorrentes. Este plano atualiza as duas menções de `status_badge.html` em `docs/design-system.md` para `badge.html` como parte da entrega, eliminando a divergência de nome na documentação.
+
+## Contrato ARIA de `badge.html`
+
+- `role` (opcional): quando informado, é renderizado literalmente como `role="{{ role }}"` no `<span>`. Sem valor por padrão (nenhum `role` é emitido) — decisão do chamador, `badge.html` não infere role a partir de `variant`.
+- `aria_label` (opcional): quando informado, é renderizado como `aria-label="{{ aria_label }}"`. Sem valor por padrão.
+- Convenção adotada pelos partials de domínio (`docs/CONVENTIONS.md`): estados neutros/informativos passam `role="status"`; nenhum dos 34 usos migrados é warning/error bloqueante o suficiente para exigir `role="alert"` (todos são indicadores de estado em listagem, não alertas ativos) — mantém-se `role="status"` onde já existia (`_estado_badge.html`) e nenhum `role` novo é introduzido nos pills antes sem `role` (preserva o comportamento atual, não expande escopo).
+- Cada linha da tabela "Arquivos tocados" abaixo mantém exatamente o `role`/`aria-label` que o ponto de uso já tem hoje, exceto a nova `_badge_estado_saida.html`, que passa a emitir `aria-label="Estado: …"` em todos os pontos (issue pede explicitamente; hoje falta no desktop de `lista_saidas_excepcionais.html` — ganho de acessibilidade, não regressão).
+
 ## Variantes do componente
 
 12 variantes pedidas na issue + 1 adição (`amber-strong`) — justificativa abaixo.
 
 Padrão de classes (uma string literal por `{% if %}`, exigência do JIT):
-```
+```text
 inline-flex items-center rounded-full bg-{cor}-{100|200} px-2.5 py-0.5 text-xs font-semibold text-{cor}-900 ring-1 ring-inset ring-{cor}-{200|300}
 ```
 
@@ -47,7 +56,7 @@ Todos os pills que já usam `bg-X-100` mas com `font-medium`, `text-X-800` ou se
 
 Único ponto com mudança de **tom** (100→200): `lista_materiais.html` "Divergente" (hoje `bg-red-100`/`text-red-800`/`ring-red-300` — combinação já inconsistente) migra para `red-strong` (200/900/300), conforme pedido explícito da issue. Registrar no PR.
 
-`preview_importacao_scpi.html`: as 3 badges do desktop (OK/Divergência/Novo) hoje têm um `<svg>` decorativo (`aria-hidden="true"`) inline junto ao texto; as versões mobile não têm ícone. `badge.html` não tem slot de ícone (fora do contrato da issue — só `variant`/`label`). Os ícones são removidos nas 3 badges desktop para alinhar com mobile e com o componente único; são puramente decorativos (`aria-hidden`), o texto já é o portador primário de significado — sem perda de informação. Registrar no PR.
+**Critério de aceite adicional — remoção de ícone decorativo (aprovado neste plano):** `preview_importacao_scpi.html` tem 3 badges desktop (OK/Divergência/Novo) com `<svg aria-hidden="true">` inline junto ao texto; as versões mobile equivalentes não têm ícone — já são visualmente distintas hoje. `badge.html` não recebe slot de ícone (contrato da issue é só `variant`/`label`); adicionar um slot só para este caso isolado violaria "proibido qualquer referência a enum de domínio" por extensão de escopo do componente global. Decisão: os 3 ícones desktop são removidos, alinhando desktop e mobile. Como são puramente decorativos (`aria-hidden="true"`) e o texto (`OK`/`Divergência`/`Novo`) já é o portador primário de significado, não há perda de informação nem impacto de acessibilidade — é uma mudança visual menor, aprovada explicitamente aqui como parte do critério de aceite da paridade visual (a paridade exigida pela issue é de cor/peso por variante, não de ícones decorativos pré-existentes e inconsistentes entre mobile/desktop).
 
 ## Arquivos tocados
 
@@ -68,11 +77,17 @@ Todos os pills que já usam `bg-X-100` mas com `font-medium`, `text-X-800` ou se
 
 ## Estratégia de teste
 
-Templates puros (sem lógica Python nova) — sem testes unitários de service/view. Verificação:
-- `ruff format .` / `ruff check .` (sem impacto esperado, nenhum `.py` tocado).
-- Suíte completa (`uv run pytest`) — deve permanecer verde, nenhuma view/model muda.
-- Verificação manual no browser (checklist da issue): minhas requisições, filas (atendimento/autorização), histórico, saídas excepcionais (lista+detalhe), catálogo, importação SCPI (histórico+preview) — 8 telas.
-- Diff atributo a atributo dos 34 pontos de `role`/`aria-label` (conferência manual durante a implementação).
+Modelos puros (sem lógica Python nova) — sem testes unitários de service/view. Cada etapa tem critério de sucesso explícito:
+
+| Etapa | Critério de sucesso |
+|---|---|
+| `ruff format . && ruff check .` | Saída limpa (nenhum `.py` é tocado, mas roda para confirmar zero regressão acidental). |
+| `uv run mypy apps` | Saída limpa — mesma razão acima; nenhuma mudança de tipo esperada. |
+| `uv run pytest -q -ra --tb=short --strict-markers --disable-warnings -n logical` | Suíte 100% verde, contagem de passes igual à baseline pré-mudança (nenhuma view/model muda). |
+| `npm run css:build` | Roda sem erro; `apps/core/static/core/css/app.css` aparece no diff com as novas classes de `badge.html` compiladas; nenhuma classe órfã (grep por `bg-{cor}-{100,200}.*ring-{cor}-{200,300}` de cada variante presente no CSS gerado). |
+| Contraste WCAG AA | Cada par fundo-100/texto-900 (e fundo-200/texto-900) usado nas 13 variantes já é o mesmo par documentado como AA-compliant em `_badge_tipo_movimentacao.html`; conferir com ferramenta de contraste (ex. DevTools) pelo menos 1 variante nova (`amber-strong`) e 1 normalizada (`teal`) como amostra — razão de contraste ≥ 4.5:1. |
+| Verificação manual no navegador | Checklist da issue: minhas requisições, filas (atendimento/autorização), histórico, saídas excepcionais (lista+detalhe), catálogo, importação SCPI (histórico+preview) — 8 telas, sem regressão visual fora do documentado em "Normalização". |
+| Diff ARIA | Conferência atributo a atributo dos 34 pontos de `role`/`aria-label` contra o estado antes da migração (ver "Contrato ARIA" acima) — zero divergência não documentada. |
 
 ## Invariantes (docs/design-acesso-rapido/matriz-invariantes.md)
 
