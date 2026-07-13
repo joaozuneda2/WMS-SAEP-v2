@@ -1,7 +1,8 @@
 {% comment %}
 Componente global de caixa de aviso (banner estático). Não conhece exceções de
-domínio — só variante visual e role ARIA (contrato: error/warning=alert,
-success/info=status; memória messages-contract).
+domínio — só variante visual e role ARIA: warning/danger=alert, success/info=status
+(equivalente ao contrato error/warning=alert do messages-contract; "danger" é o
+nome de variante aqui, análogo a button.html — ver docs/plans/77-alert-component.md).
 
 Parâmetros:
   variant        (opcional, default=info) info, success, warning, danger

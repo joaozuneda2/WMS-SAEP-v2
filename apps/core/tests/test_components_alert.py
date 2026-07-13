@@ -57,9 +57,16 @@ def test_message_e_autoescapado():
 def test_body_template_inclui_conteudo_e_herda_contexto():
     html = render_to_string(
         'components/alert.html',
-        {'variant': 'danger', 'body_template': 'components/icons/_check.html'},
+        {
+            'variant': 'danger',
+            'icone': False,
+            'body_template': 'core/partials/_fixture_teste_body_template.html',
+            'valor_herdado': 'valor-vindo-do-contexto-do-chamador',
+        },
     )
-    assert 'aria-hidden="true"' in html
+    assert '<svg' not in html
+    assert 'data-fixture-heranca-contexto' in html
+    assert 'valor-vindo-do-contexto-do-chamador' in html
 
 
 def test_class_passthrough_e_mesclado_nao_substitui_invariantes():
